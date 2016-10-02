@@ -1,7 +1,7 @@
-This program controlls the HP/Agilent 66309, 66311, 66319, and 66321 instruments.
+This program controls the HP/Agilent 66309, 66311, 66319, and 66321 instruments.
 
 The program is unfinished, but works well enough for my use on a 66309D. It's only been
-tested on that particular model, and currently will not work on the other instruments.
+tested on that particular model, and probably will not work on other models.
 
 For the moment, I'm putting it on GitHub mostly as a backup copy of the code. That said, I hereby license it under the GPLv3.
 

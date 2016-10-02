@@ -170,6 +170,14 @@ namespace HP663xxCtrl {
             CH1ITextBox.Text = details.I1.ToString();
             CH2VTextBox.Text = details.V2.ToString();
             CH2ITextBox.Text = details.I2.ToString();
+            DVMGroupBox.Visibility = details.HasDVM ?
+                System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+            var CH2Visibility = details.HasOutput2 ?
+                System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+            CH2ReadbackGroupBox.Visibility = CH2Visibility;
+            CH2ProgramLabel.Visibility = CH2Visibility;
+            CH2VTextBox.Visibility = CH2Visibility;
+            CH2ITextBox.Visibility = CH2Visibility;
         }
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
             if (InstWorker != null) {
@@ -254,6 +262,10 @@ namespace HP663xxCtrl {
                 return;
             }
             InstWorker.RequestProgram(details);
+        }
+
+        private void ClearProtectionButton_Click(object sender, RoutedEventArgs e) {
+            InstWorker.RequestClearProtection();
         }
 
     }

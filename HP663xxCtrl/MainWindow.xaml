@@ -73,7 +73,7 @@
                     </TextBlock>
                 </Grid>
             </GroupBox>
-            <GroupBox Header="Channel 2">
+            <GroupBox Name="CH2ReadbackGroupBox" Header="Channel 2">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*"/>
@@ -94,7 +94,7 @@
                     </TextBlock>
                 </Grid>
             </GroupBox>
-            <GroupBox Header="DVM">
+            <GroupBox Name="DVMGroupBox" Header="DVM">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*"/>
@@ -118,9 +118,10 @@
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="auto"/>
                         <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="1: " />
-                    <TextBlock Grid.Row="2" Grid.Column="0" Text="2: " />
+                    <TextBlock Name="CH2ProgramLabel" Grid.Row="2" Grid.Column="0" Text="2: " />
                     <TextBlock Grid.Row="0" Grid.Column="1" Text="V" HorizontalAlignment="Center" />
                     <TextBlock Grid.Row="0" Grid.Column="2" Text="I" HorizontalAlignment="Center" />
                     <TextBox Name="CH1VTextBox" Grid.Row="1" Grid.Column="1" Text="0.0"/>
@@ -131,9 +132,12 @@
                         <CheckBox Name="EnableOutputCheckbox" Content="EN" />
                         <CheckBox Name="OCPCheckbox" Content="OCP" />
                     </StackPanel>
-                    <StackPanel Grid.Row="4" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button  Name="ApplyProgramButton" Content="Apply" Height="21" Margin="0,0,0,-0.429" VerticalAlignment="Top" Click="ApplyProgramButton_Click" />
-                    </StackPanel>
+                    <DockPanel Grid.Row="4" Grid.ColumnSpan="3" HorizontalAlignment="Right">
+                        <Button DockPanel.Dock="Right" Name="ApplyProgramButton" Content="Apply" Click="ApplyProgramButton_Click" />
+                    </DockPanel>
+                    <DockPanel Grid.Row="5" Grid.ColumnSpan="3" HorizontalAlignment="Right">
+                        <Button DockPanel.Dock="Right" Name="ClearProtectionButton" Content="Clear Prot." Click="ClearProtectionButton_Click"/>
+                    </DockPanel>
                 </Grid>
             </GroupBox>
             <GroupBox Header="Ch. 1 Measurement Mode">

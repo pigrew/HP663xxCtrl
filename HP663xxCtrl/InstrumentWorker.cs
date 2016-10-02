@@ -27,7 +27,8 @@ namespace HP663xxCtrl {
         enum CommandEnum {
             IRange,
             Acquire,
-            Program
+            Program,
+            ClearProtection
         }
         struct Command {
             public CommandEnum cmd;
@@ -79,6 +80,9 @@ namespace HP663xxCtrl {
                             break;
                         case CommandEnum.Program:
                             DoProgram((HP663xx.ProgramDetails)cmd.arg);
+                            break;
+                        case CommandEnum.ClearProtection:
+                            DoClearProtection();
                             break;
                         default:
                             throw new Exception("Unhandled command in InstrumentWorker");
@@ -152,6 +156,15 @@ namespace HP663xxCtrl {
             EventQueue.Add(new Command() {
                 cmd = CommandEnum.Program,
                 arg = details
+            });
+        }
+        void DoClearProtection() {
+            dev.ClearProtection();
+        }
+        public void RequestClearProtection() {
+            EventQueue.Add(new Command() {
+                cmd = CommandEnum.ClearProtection,
+                arg = null
             });
         }
         public void RequestShutdown() {

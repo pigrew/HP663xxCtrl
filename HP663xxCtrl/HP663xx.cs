@@ -11,6 +11,8 @@ namespace HP663xxCtrl
     {
         ResourceManager rm = new ResourceManager();
         FormattedIO488 dev = new FormattedIO488();
+        public bool HasDVM { get; private set; }
+        public bool HasOutput2 { get; private set; }
 
         string ID;
         public void Reset()
@@ -88,20 +90,25 @@ namespace HP663xxCtrl
             public bool OVP;
             public double OVPVal;
             public double V1, I1, V2, I2;
+            public bool HasDVM, HasOutput2;
         }
         public ProgramDetails ReadProgramDetails() {
-            string response = Query("OUTP?;VOLT?;CURR?;VOLT2?;CURR2?;"
-                + ":VOLT:PROT:STAT?;:VOLT:PROT?;:CURR:PROT:STAT?").Trim();
+
+            string response = Query("OUTP?;VOLT?;CURR?;"
+                + ":VOLT:PROT:STAT?;:VOLT:PROT?;:CURR:PROT:STAT?" +
+                (HasOutput2? ";:VOLT2?;CURR2?":"")).Trim();
             string[] parts = response.Split(new char[] { ';' });
             ProgramDetails details = new ProgramDetails() {
                 Enabled = (parts[0] == "1"),
                 V1 = double.Parse(parts[1]),
                 I1 = double.Parse(parts[2]),
-                V2 = double.Parse(parts[3]),
-                I2 = double.Parse(parts[4]),
-                OVP = (parts[5] == "1"),
-                OVPVal = double.Parse(parts[6]),
-                OCP = (parts[7] == "1"),
+                OVP = (parts[3] == "1"),
+                OVPVal = double.Parse(parts[4]),
+                OCP = (parts[5] == "1"),
+                V2 = HasOutput2? double.Parse(parts[6]):double.NaN,
+                I2 = HasOutput2 ? double.Parse(parts[7]) : double.NaN,
+                HasDVM = HasDVM,
+                HasOutput2 = HasOutput2
             };
             return details;
         }
@@ -136,7 +143,7 @@ namespace HP663xxCtrl
             ret.V = Double.Parse(Query("MEAS:VOLT?"));
             ret.I = Double.Parse(Query("MEAS:CURR?"));
             // Ch2 is about 100 ms
-            if (measureCh2) {
+            if (measureCh2 && HasOutput2) {
                 ret.V2 = Double.Parse(Query("MEAS:VOLT2?"));
                 ret.I2 = Double.Parse(Query("MEAS:CURR2?")); // Fixed at 2048*(15.6us)
             } else {
@@ -145,7 +152,7 @@ namespace HP663xxCtrl
             }
 
             // RMS is also available using MEAS:DVM:ACDC
-            if(measureDVM)
+            if(measureDVM && HasDVM)
                 ret.DVM = Double.Parse(Query("MEAS:DVM?")); // 2048*(15.6us) => 50 ms
             else
                 ret.DVM = Double.NaN;
@@ -211,6 +218,8 @@ namespace HP663xxCtrl
                 throw new InvalidOperationException();
             }
             string modeString;
+            if (mode == SenseModeEnum.DVM && !HasDVM)
+                throw new Exception();
             switch (mode)
             {
                 case SenseModeEnum.CURRENT: modeString = "CURR"; break;
@@ -275,9 +284,11 @@ namespace HP663xxCtrl
             res.TimeInterval = double.Parse(Query("SENSE:SWEEP:TINT?"));
             return res;
         }
+        public void ClearProtection() {
+            dev.WriteString("OUTPut:PROTection:CLEar");
+        }
         public void EnableOutput(bool enabled)
         {
-           // dev.WriteString("OUTPut:PROTection:CLEar");
             dev.WriteString("OUTPUT  " + (enabled?"ON":"OFF"));
         }
         public void SetIV(int channel, double voltage, double current) {
@@ -326,8 +337,15 @@ namespace HP663xxCtrl
 
             dev.WriteString("*IDN?");
             ID = dev.ReadString();
-            if (!ID.Contains("66309"))
-            {
+            if (ID.Contains(",66309B,") || ID.Contains(",66319B,")) {
+                HasDVM = false; HasOutput2 = true;
+            } else if (ID.Contains(",66309D,") || ID.Contains(",66319D,")) {
+                HasDVM = true; HasOutput2 = true;
+            } else if (ID.Contains(",66311B,") || ID.Contains(",66321B,")) {
+                HasDVM = false; HasOutput2 = false;
+            } else if (ID.Contains(",66311D,") || ID.Contains(",66321D,")) {
+                HasDVM = true; HasOutput2 = true;
+            } else  {
                 dev.IO.Close();
                 dev.IO = null;
                 throw new InvalidOperationException("Not a 66309 supply!");
