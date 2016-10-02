@@ -79,19 +79,46 @@ namespace HP663xxCtrl
             public double duration;
             public bool OutputEnabled;
             public bool OutputEnabled2;
+            public bool OVP;
+            public bool OCP;
+        }
+        public struct ProgramDetails {
+            public bool Enabled;
+            public bool OCP;
+            public bool OVP;
+            public double OVPVal;
+            public double V1, I1, V2, I2;
+        }
+        public ProgramDetails ReadProgramDetails() {
+            string response = Query("OUTP?;VOLT?;CURR?;VOLT2?;CURR2?;"
+                + ":VOLT:PROT:STAT?;:VOLT:PROT?;:CURR:PROT:STAT?").Trim();
+            string[] parts = response.Split(new char[] { ';' });
+            ProgramDetails details = new ProgramDetails() {
+                Enabled = (parts[0] == "1"),
+                V1 = double.Parse(parts[1]),
+                I1 = double.Parse(parts[2]),
+                V2 = double.Parse(parts[3]),
+                I2 = double.Parse(parts[4]),
+                OVP = (parts[5] == "1"),
+                OVPVal = double.Parse(parts[6]),
+                OCP = (parts[7] == "1"),
+            };
+            return details;
         }
         public InstrumentState ReadState(bool measureCh2=true, bool measureDVM=true) {
             InstrumentState ret = new InstrumentState();
             DateTime start = DateTime.Now;
             // ~23 ms
             string statusStr = Query("stat:oper:cond?;:stat:ques:cond?;:sense:curr:range?;" +
-                ":OUTP1?").Trim();
+                ":OUTP1?;VOLTage:PROTection:STAT?;:CURR:PROT:STAT?").Trim();
             string[] statuses = statusStr.Split(new char[] { ';' });
             ret.Flags = new StatusFlags();
             ret.Flags.Operation = (OperationStatusEnum)int.Parse(statuses[0]);
             ret.Flags.Questionable = (QuestionableStatusEnum)int.Parse(statuses[1]);
             ret.IRange = double.Parse(statuses[2]);
             ret.OutputEnabled = statuses[3] == "1";
+            ret.OVP = statuses[4] == "1";
+            ret.OCP = statuses[5] == "1";
             // Must measure each thing individually
             // Default is 2048 points, with 46.8us rate
             // This is 95.8 ms; about 6 PLC in America, or 5 in other places.
@@ -250,8 +277,15 @@ namespace HP663xxCtrl
         }
         public void EnableOutput(bool enabled)
         {
-            dev.WriteString("OUTPut:PROTection:CLEar");
+           // dev.WriteString("OUTPut:PROTection:CLEar");
             dev.WriteString("OUTPUT  " + (enabled?"ON":"OFF"));
+        }
+        public void SetIV(int channel, double voltage, double current) {
+            dev.WriteString("VOLT" + 
+                (channel==2?"2 ":" ") + voltage.ToString() +
+                ";:CURR" + 
+                (channel==2?"2 ":" ") + current.ToString() 
+                );
         }
         public void SetVoltage(double voltage)
         {

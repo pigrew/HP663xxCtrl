@@ -70,8 +70,11 @@ namespace HP663xxCtrl {
             };
             InstWorker.DataAcquired += delegate(object sender2, HP663xx.MeasArray measArray)
             {
-                Dispatcher.BeginInvoke((Action)(() =>
-                {HandleDataAcquired(sender2, measArray); }));
+                Dispatcher.BeginInvoke((Action)(() => { HandleDataAcquired(sender2, measArray); }));
+            };
+            InstWorker.ProgramDetailsReadback += delegate(object sender2, HP663xx.ProgramDetails details)
+            {
+                Dispatcher.BeginInvoke((Action)(() => { HandleProgramDetailsReadback(sender2, details); }));
             };
             InstWorker.StateChanged += delegate(object sender2, InstrumentWorker.StateEnum state)
             {
@@ -109,7 +112,9 @@ namespace HP663xxCtrl {
             Ch1StatusLabel.Text =
                  ((state.Flags.Questionable.HasFlag(HP663xx.QuestionableStatusEnum.Unregulated)) ? "UNR" : "  ") +
                 " " +
-                "OVP  OCP " +
+                (state.OVP? "OVP" : "   ") +
+                " " +
+                (state.OCP ? "OCP" : "   ") +
                 " " +
                 ((state.Flags.Operation.HasFlag(HP663xx.OperationStatusEnum.CV)) ? "CV" : "  ") +
                 " " +
@@ -128,7 +133,9 @@ namespace HP663xxCtrl {
             Ch2StatusLabel.Text =
                  ((state.Flags.Questionable.HasFlag(HP663xx.QuestionableStatusEnum.Unregulated2)) ? "UNR" : "  ") +
                 " " +
-                "OVP  OCP " +
+                (state.OVP ? "OVP" : "   ") +
+                " " +
+                (state.OCP ? "OCP" : "   ") +
                 " " +
                 ((state.Flags.Operation.HasFlag(HP663xx.OperationStatusEnum.CV2)) ? "CV" : "  ") +
                 " " +
@@ -137,14 +144,6 @@ namespace HP663xxCtrl {
             DVMVLabel.Text = state.DVM.ToString("#0.###");
         }
         private void HandleDataAcquired(object sender, HP663xx.MeasArray result) {
-            //DateTime a = DateTime.Now;
-
-            /*var result = SMU.MakeTransientMeasurement(
-                HP663xx.SenseModeEnum.CURRENT,
-                numPoints: pts, interval: (duration / pts),
-                immediateTrigger: false, level: 0.0025, triggerEdge: HP663xx.TriggerSlopeEnum.Positive,
-                triggerCount: 5,
-                triggerOffset: offset);*/
 
             ZedGraphControl zgc = (ZedGraphControl)ZedGraphHost.Child;
             zgc.GraphPane.XAxis.Title.Text = "Time";
@@ -164,7 +163,14 @@ namespace HP663xxCtrl {
         private void OnMenuItem_Exit(object sender, RoutedEventArgs e) {
             this.Close();
         }
-
+        void HandleProgramDetailsReadback(object sender, HP663xx.ProgramDetails details) {
+            EnableOutputCheckbox.IsChecked = details.Enabled;
+            OCPCheckbox.IsChecked = details.OCP;
+            CH1VTextBox.Text = details.V1.ToString();
+            CH1ITextBox.Text = details.I1.ToString();
+            CH2VTextBox.Text = details.V2.ToString();
+            CH2ITextBox.Text = details.I2.ToString();
+        }
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
             if (InstWorker != null) {
                 ComboBoxItem item = (ComboBoxItem)e.AddedItems[0];
@@ -225,7 +231,7 @@ namespace HP663xxCtrl {
         }
 
         private void ApplyProgramButton_Click(object sender, RoutedEventArgs e) {
-            InstrumentWorker.ProgramDetails details = new InstrumentWorker.ProgramDetails();
+            HP663xx.ProgramDetails details = new HP663xx.ProgramDetails();
             string ParseError = "";
             details.Enabled = EnableOutputCheckbox.IsChecked.Value;
             details.OCP = OCPCheckbox.IsChecked.Value;

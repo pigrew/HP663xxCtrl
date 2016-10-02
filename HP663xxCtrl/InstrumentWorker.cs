@@ -42,11 +42,6 @@ namespace HP663xxCtrl {
             public int SegmentCount;
             public int SampleOffset;
         }
-        public struct ProgramDetails {
-            public bool Enabled;
-            public bool OCP;
-            public double V1, I1, V2, I2;
-        }
         void RefreshDisplay() {
             var state = dev.ReadState();
             if (NewState != null)
@@ -59,11 +54,15 @@ namespace HP663xxCtrl {
         public event EventHandler WorkerDone;
         public event EventHandler<HP663xx.InstrumentState> NewState;
         public event EventHandler<StateEnum> StateChanged;
+        public event EventHandler<HP663xx.ProgramDetails> ProgramDetailsReadback;
+        DateTime LastRefresh;
         public void ThreadMain() {
-            DateTime LastRefresh;
 
             dev = new HP663xx(VisaAddress);
             if (StateChanged != null) StateChanged(this, StateEnum.Connected);
+            if (ProgramDetailsReadback != null) {
+                ProgramDetailsReadback(this, dev.ReadProgramDetails());
+            }
             RefreshDisplay();
             LastRefresh = DateTime.Now;
 
@@ -79,7 +78,7 @@ namespace HP663xxCtrl {
                             DoAcquisition((AcquireDetails)cmd.arg);
                             break;
                         case CommandEnum.Program:
-                            DoProgram((ProgramDetails)cmd.arg);
+                            DoProgram((HP663xx.ProgramDetails)cmd.arg);
                             break;
                         default:
                             throw new Exception("Unhandled command in InstrumentWorker");
@@ -136,10 +135,20 @@ namespace HP663xxCtrl {
                 arg = details
             });
         }
-        void DoProgram(ProgramDetails details) {
-            dev.SetOCP(details.OCP);
+        void DoProgram(HP663xx.ProgramDetails details) {
+            if (!details.Enabled) {
+                dev.EnableOutput(details.Enabled);
+                dev.SetOCP(details.OCP);
+            }
+            dev.SetIV(1, details.V1, details.I1);
+            dev.SetIV(2, details.V2, details.I2);
+            if (details.Enabled) {
+                dev.SetOCP(details.OCP);
+                dev.EnableOutput(details.Enabled);
+            }
+            LastRefresh = DateTime.MinValue;
         }
-        public void RequestProgram(ProgramDetails details) {
+        public void RequestProgram(HP663xx.ProgramDetails details) {
             EventQueue.Add(new Command() {
                 cmd = CommandEnum.Program,
                 arg = details
