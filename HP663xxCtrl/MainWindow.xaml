@@ -1,0 +1,229 @@
+﻿<Window x:Class="HP663xxCtrl.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:zed="clr-namespace:ZedGraph;assembly=ZedGraph"
+        Title="HP663xx Control" Closing="Window_Closing" >
+    <Window.Resources>
+        <Style TargetType="{x:Type Control}" x:Key="BoldFixed">
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        <Style TargetType="{x:Type TextBlock}" x:Key="TB_BoldFixed">
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+    </Window.Resources>
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="E_xit" Click="OnMenuItem_Exit"/>
+            </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem Header="Cu_t" Command="ApplicationCommands.Cut"/>
+                <MenuItem Header="_Copy" Command="ApplicationCommands.Copy"/>
+                <MenuItem Header="Co_py" Command="ApplicationCommands.Paste"/>
+            </MenuItem>
+        </Menu>
+        <StatusBar DockPanel.Dock="Bottom" FontFamily="Consolas">
+            <StatusBar.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </StatusBar.ItemsPanel>
+            <StatusBarItem  x:Name="ConnectionStatusBarItem" Content="DISCONNECTED" Grid.Column="0"/>
+            <Separator   Grid.Column="1"/>
+            <StatusBarItem x:Name="ActivityStatusBarItem" Content="IDLE"  Grid.Column="2"/>
+        </StatusBar>
+
+        <StackPanel DockPanel.Dock="Left">
+            <GroupBox Header="Connection" >
+                <StackPanel >
+                    <Label Content="Address:" />
+                    <ComboBox x:Name="AddressComboBox"  AllowDrop="True" IsEditable="True" Text="GPIB0::5::INSTR" />
+                    <Button x:Name="ConnectButton" Content="Connect"  Click="GoButton_Click"/>
+                    <Button x:Name="DisconnectButton" Content="Disconnect" Click="DisconnectButton_Click" IsEnabled="False"/>
+                </StackPanel>
+            </GroupBox>
+            <GroupBox Header="Channel 1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="1*"/>
+                        <RowDefinition Height="1*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Name="Ch1VLabel"  Text="+0.--- V" Grid.Row="0" Grid.Column="0"  HorizontalAlignment="Center" Style="{StaticResource TB_BoldFixed}"/>
+                    <TextBlock Name="Ch1ILabel" Text="+0.---- A" Grid.Row="0" Grid.Column="1"  HorizontalAlignment="Center" Style="{StaticResource TB_BoldFixed}"/>
+                    <TextBlock Name="Ch1StatusLabel"  Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Style="{StaticResource TB_BoldFixed}" HorizontalAlignment="Center"  >
+                        <TextBlock.RenderTransform>
+                            <ScaleTransform ScaleX="0.8" ScaleY="0.8" />
+                        </TextBlock.RenderTransform>
+                             OVP  OCP  CV  CC+
+                    </TextBlock>
+                </Grid>
+            </GroupBox>
+            <GroupBox Header="Channel 2">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="1*"/>
+                        <RowDefinition Height="1*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Name="Ch2VLabel"  Text="+0.--- V" Grid.Row="0" Grid.Column="0"  HorizontalAlignment="Center" Style="{StaticResource TB_BoldFixed}"/>
+                    <TextBlock Name="Ch2ILabel" Text="+0.---- A" Grid.Row="0" Grid.Column="1"  HorizontalAlignment="Center" Style="{StaticResource TB_BoldFixed}"/>
+                    <TextBlock Name="Ch2StatusLabel" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Style="{StaticResource TB_BoldFixed}" HorizontalAlignment="Center"  >
+                        <TextBlock.RenderTransform>
+                            <ScaleTransform ScaleX="0.8" ScaleY="0.8" />
+                        </TextBlock.RenderTransform>
+                                  OCP  CV  CC
+                    </TextBlock>
+                </Grid>
+            </GroupBox>
+            <GroupBox Header="DVM">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="1*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Name="DVMVLabel" Text="+0.--- V" Grid.Row="0" Grid.Column="0"  HorizontalAlignment="Center" Style="{StaticResource TB_BoldFixed}"/>
+                </Grid>
+            </GroupBox>
+            <GroupBox Header="Program">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="AUTO"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="1: " />
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="2: " />
+                    <TextBlock Grid.Row="0" Grid.Column="1" Text="V" HorizontalAlignment="Center" />
+                    <TextBlock Grid.Row="0" Grid.Column="2" Text="I" HorizontalAlignment="Center" />
+                    <TextBox Name="CH1VTextBox" Grid.Row="1" Grid.Column="1" Text="0.0"/>
+                    <TextBox Name="CH1ITextBox" Grid.Row="1" Grid.Column="2" Text="0.001"/>
+                    <TextBox Name="CH2VTextBox" Grid.Row="2" Grid.Column="1" Text="0.0"/>
+                    <TextBox Name="CH2ITextBox" Grid.Row="2" Grid.Column="2" Text="0.001"/>
+                    <StackPanel Grid.Row="3" Grid.ColumnSpan="3" Orientation="Horizontal" >
+                        <CheckBox Name="EnableOutputCheckbox" Content="EN" />
+                        <CheckBox Name="OCPCheckbox" Content="OCP" />
+                    </StackPanel>
+                    <StackPanel Grid.Row="4" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button  Name="ApplyProgramButton" Content="Apply" Height="21" Margin="0,0,0,-0.429" VerticalAlignment="Top" Click="ApplyProgramButton_Click" />
+                    </StackPanel>
+                </Grid>
+            </GroupBox>
+            <GroupBox Header="Ch. 1 Measurement Mode">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <Label Grid.Row="0" Grid.Column="0"  Content="Current Range: " VerticalAlignment="Center"/>
+                    <ComboBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"  AllowDrop="True" SelectedIndex="0" SelectionChanged="ComboBox_SelectionChanged">
+                        <!--<ComboBoxItem Tag="AUTO">Auto</ComboBoxItem>-->
+                        <ComboBoxItem Tag="LOW">20 mA</ComboBoxItem>
+                        <ComboBoxItem Tag="HIGH">3 A</ComboBoxItem>
+                    </ComboBox>
+
+                    <Label Grid.Row="1" Grid.Column="0"  Content="Current Mode: " VerticalAlignment="Center"/>
+                    <ComboBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"  AllowDrop="True" SelectedIndex="1">
+                        <ComboBoxItem Tag="IMMED">DC</ComboBoxItem><!-- high range only? -->
+                        <ComboBoxItem Tag="POS">ACDC</ComboBoxItem>
+                    </ComboBox>
+                </Grid>
+            </GroupBox>
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+            <GroupBox Header="Acquisition" >
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.ColumnSpan="3" Orientation="Horizontal">
+                        <RadioButton GroupName="AcqSenseMode" Name="AcqVoltageRadioButton"  Tag="V" Content="Voltage "/>
+                        <RadioButton GroupName="AcqSenseMode" Name="AcqCurrentRadioButton" Tag="I" Content="Current " IsChecked="True"/>
+                        <RadioButton GroupName="AcqSenseMode" Name="AcqDVMRadioButton" Tag="DVM" Content="DVM "/>
+                    </StackPanel>
+                    <Label x:Name="DurationLabel" Grid.Row="1" Grid.Column="0" Content="Time (s): " VerticalAlignment="Center"/>
+                    <TextBox x:Name="DurationTextBox" Grid.Row="1" Grid.Column="1"  Text="1.0" VerticalAlignment="Center"/>
+                    <Label x:Name="NumPointsLabel" Grid.Row="2" Grid.Column="0"  Content="Num Pts: " VerticalAlignment="Center"/>
+                    <TextBox x:Name="NumPtsTextBox" Grid.Row="2" Grid.Column="1" Text="1024" VerticalAlignment="Center" />
+                    <Label x:Name="NumSegmentsLabel" Grid.Row="3" Grid.Column="0"  Content="Segments: " VerticalAlignment="Center"/>
+                    <TextBox x:Name="NumSegmentsTextBox" Grid.Row="3" Grid.Column="1" Text="1" VerticalAlignment="Center" />
+                </Grid>
+            </GroupBox>
+            <GroupBox Header="Trigger">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <ComboBox Name="TriggerComboBox" Grid.Row="0" Grid.ColumnSpan="3"  AllowDrop="True" SelectedIndex="0">
+                        <ComboBoxItem Tag="IMMED">Immediate</ComboBoxItem>
+                        <ComboBoxItem Tag="POS">Positive Slope</ComboBoxItem>
+                        <ComboBoxItem Tag="NEG">Negative Slope</ComboBoxItem>
+                        <ComboBoxItem Tag="EITHER">Either Slope</ComboBoxItem>
+                    </ComboBox>
+                    <Label x:Name="TrigLevelLabel" Grid.Row="1" Grid.Column="0"  Content="Trigger Level: " VerticalAlignment="Center"/>
+                    <TextBox x:Name="TrigLevelTextBox"   Grid.Row="1" Grid.Column="1" Text="0.0" VerticalAlignment="Center" />
+                    <TextBlock Text=" A/V"   Grid.Row="1" Grid.Column="2" VerticalAlignment="Center"/>
+                    <Label Grid.Row="2" Grid.Column="0"  Content="Hysteresis: " VerticalAlignment="Center"/>
+                    <TextBox x:Name="Hysteresis"   Grid.Row="2" Grid.Column="1" Text="0.0" VerticalAlignment="Center" />
+                    <TextBlock Text=" A/V"   Grid.Row="2" Grid.Column="2" VerticalAlignment="Center"/>
+                    <Label x:Name="SampleOffsetLabel" Grid.Row="3" Grid.Column="0"  Content="Sample Offset: " VerticalAlignment="Center"/>
+                    <TextBox x:Name="SampleOffsetTextBox" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Text="0" VerticalAlignment="Center" />
+                </Grid>
+            </GroupBox>
+            <Button Name="AcquireButton" Content="Acquire" Click="AcquireButton_Click" />
+        </StackPanel>
+        <WindowsFormsHost Name="ZedGraphHost"  Grid.Column="1" Margin="10">
+            <zed:ZedGraphControl x:Name="zgc"
+                                 Width="500"
+                                 Height="320" />
+        </WindowsFormsHost>
+    </DockPanel>
+</Window>

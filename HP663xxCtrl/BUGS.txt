@@ -1,0 +1,2 @@
+﻿* If the instrument's range is in AUTO mode, it'll stay there. The command to leave auto range is unknown.
+
