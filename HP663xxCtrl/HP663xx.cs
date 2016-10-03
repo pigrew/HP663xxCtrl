@@ -92,6 +92,7 @@ namespace HP663xxCtrl
             public double V1, I1, V2, I2;
             public bool HasDVM, HasOutput2;
             public string ID;
+            public double MaxV1, MaxI1, MaxV2, MaxI2;
         }
         public ProgramDetails ReadProgramDetails() {
 
@@ -112,6 +113,17 @@ namespace HP663xxCtrl
                 HasOutput2 = HasOutput2,
                 ID = ID
             };
+            // Maximums
+            parts = Query("VOLT? MAX; CURR? MAX").Trim().Split(new char[] {';'});
+            details.MaxV1 = double.Parse(parts[0]);
+            details.MaxI1 = double.Parse(parts[0]);
+            if (HasOutput2) {
+                parts = Query("VOLT2? MAX; CURR2? MAX").Trim().Split(new char[] { ';' });
+                details.MaxV2 = double.Parse(parts[0]);
+                details.MaxI2 = double.Parse(parts[0]);
+
+            }
+
             return details;
         }
         public InstrumentState ReadState(bool measureCh2=true, bool measureDVM=true) {

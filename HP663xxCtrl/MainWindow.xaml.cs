@@ -84,10 +84,16 @@ namespace HP663xxCtrl {
                         case InstrumentWorker.StateEnum.Connected:
                             ConnectionStatusBarItem.Content = "CONNECTED";
                             AcquireButton.IsEnabled = true;
+                            ApplyProgramButton.IsEnabled = true;
+                            StopAcquireButton.IsEnabled = false;
+                            ClearProtectionButton.IsEnabled = true;
                             break;
                         case InstrumentWorker.StateEnum.Disconnected:
                             ConnectionStatusBarItem.Content = "DISCONNECTED";
                             AcquireButton.IsEnabled = false;
+                            ApplyProgramButton.IsEnabled = false;
+                            StopAcquireButton.IsEnabled = false;
+                            ClearProtectionButton.IsEnabled = false;
                             break;
                         case InstrumentWorker.StateEnum.Measuring:
                             ConnectionStatusBarItem.Content = "MEASURING"; break;
@@ -133,7 +139,7 @@ namespace HP663xxCtrl {
             Ch2StatusLabel.Text =
                  ((state.Flags.Questionable.HasFlag(HP663xx.QuestionableStatusEnum.Unregulated2)) ? "UNR" : "  ") +
                 " " +
-                (state.OVP ? "OVP" : "   ") +
+                (state.OVP ? "   " : "   ") + // CH2 doesn't have OVP???
                 " " +
                 (state.OCP ? "OCP" : "   ") +
                 " " +
@@ -182,6 +188,14 @@ namespace HP663xxCtrl {
             OVPLevelTextBox.Text = details.OVPVal.ToString();
             var IDSplit = details.ID.Split(new char[] {','});
             ModelStatusBarItem.Content = IDSplit[1] + " (" + IDSplit[2].ToUpper() + ")";
+
+            // Limits for programming
+            CH1VTextBox.MaxValue = details.MaxV1;
+            CH1ITextBox.MaxValue = details.MaxI1;
+            if (details.HasOutput2) {
+                CH2VTextBox.MaxValue = details.MaxV2;
+                CH2ITextBox.MaxValue = details.MaxI2;
+            }
         }
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
             if (InstWorker != null) {
@@ -202,6 +216,9 @@ namespace HP663xxCtrl {
             if (InstWorker != null) {
                 InstWorker.StopAcquireRequested = false;
                 AcquireButton.IsEnabled = false;
+                ApplyProgramButton.IsEnabled = false;
+                ClearProtectionButton.IsEnabled = false;
+                StopAcquireButton.IsEnabled = true;
                 zgc.GraphPane.CurveList.Clear();
             
                 InstrumentWorker.AcquireDetails details = new InstrumentWorker.AcquireDetails();
@@ -232,6 +249,10 @@ namespace HP663xxCtrl {
                 }
                 InstWorker.RequestAcquire(details);
             }
+        }
+
+        private void StopAcquireButton_Click(object sender, RoutedEventArgs e) {
+            StopAcquireButton.IsEnabled = false;
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e) {

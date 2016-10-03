@@ -130,10 +130,10 @@
                     <TextBlock Name="CH2ProgramLabel" Grid.Row="2" Grid.Column="0" Text="2: " />
                     <TextBlock Grid.Row="0" Grid.Column="1" Text="V" HorizontalAlignment="Center" />
                     <TextBlock Grid.Row="0" Grid.Column="2" Text="I" HorizontalAlignment="Center" />
-                    <TextBox Name="CH1VTextBox" Grid.Row="1" Grid.Column="1" Text="0.0"/>
-                    <TextBox Name="CH1ITextBox" Grid.Row="1" Grid.Column="2" Text="0.001"/>
-                    <TextBox Name="CH2VTextBox" Grid.Row="2" Grid.Column="1" Text="0.0"/>
-                    <TextBox Name="CH2ITextBox" Grid.Row="2" Grid.Column="2" Text="0.001"/>
+                    <numericInput:DoubleBox Name="CH1VTextBox" Grid.Row="1" Grid.Column="1" Text="0.0" MinValue="0.0"/>
+                    <numericInput:DoubleBox Name="CH1ITextBox" Grid.Row="1" Grid.Column="2" Text="0.001" MinValue="0.0"/>
+                    <numericInput:DoubleBox Name="CH2VTextBox" Grid.Row="2" Grid.Column="1" Text="0.0" MinValue="0.0"/>
+                    <numericInput:DoubleBox Name="CH2ITextBox" Grid.Row="2" Grid.Column="2" Text="0.001" MinValue="0.0"/>
                     <StackPanel Grid.Row="3" Grid.ColumnSpan="3" Orientation="Horizontal" >
                         <CheckBox Name="EnableOutputCheckbox" Content="EN  " />
                         <CheckBox Name="OCPCheckbox" Content="OCP" />
@@ -143,10 +143,10 @@
                         <numericInput:DoubleBox Name="OVPLevelTextBox" Text="22" CanValueBeNull="True" MinValue="0" MaxValue="22" />
                     </DockPanel>
                     <DockPanel Grid.Row="5" Grid.ColumnSpan="3" HorizontalAlignment="Right">
-                        <Button DockPanel.Dock="Right" Name="ApplyProgramButton" Content="Apply" Click="ApplyProgramButton_Click" />
+                        <Button DockPanel.Dock="Right" Name="ApplyProgramButton" Content="Apply" Click="ApplyProgramButton_Click" IsEnabled="False" />
                     </DockPanel>
                     <DockPanel Grid.Row="6" Grid.ColumnSpan="3" HorizontalAlignment="Right">
-                        <Button DockPanel.Dock="Right" Name="ClearProtectionButton" Content="Clear Prot." Click="ClearProtectionButton_Click"/>
+                        <Button DockPanel.Dock="Right" Name="ClearProtectionButton" Content="Clear Prot." Click="ClearProtectionButton_Click"  IsEnabled="False"/>
                     </DockPanel>
                 </Grid>
             </GroupBox>
@@ -232,7 +232,10 @@
                     <numericInput:IntBox x:Name="SampleOffsetTextBox" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Text="0" VerticalAlignment="Center" MinValue="-2000" MaxValue="2000000000"/>
                 </Grid>
             </GroupBox>
-            <Button Name="AcquireButton" Content="Acquire" Click="AcquireButton_Click" />
+            <StackPanel>
+                <Button Name="AcquireButton" Content="Acquire" Click="AcquireButton_Click" IsEnabled="False"/>
+                <Button Name="StopAcquireButton" Content="Stop" Click="StopAcquireButton_Click" IsEnabled="False"/>
+            </StackPanel>
         </StackPanel>
         <WindowsFormsHost Name="ZedGraphHost"  Grid.Column="1" Margin="10">
             <zed:ZedGraphControl x:Name="zgc"
