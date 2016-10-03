@@ -116,7 +116,7 @@ namespace HP663xxCtrl {
                     count = 1;
                 else
                     count = Math.Min(remaining, 4096 / arg.NumPoints);
-                var data = dev.MakeTransientMeasurement(
+                dev.StartTransientMeasurement(
                     mode: arg.SenseMode,
                     numPoints: arg.NumPoints,
                     interval: arg.Interval,
@@ -124,6 +124,16 @@ namespace HP663xxCtrl {
                     level: arg.Level,
                     triggerCount: count,
                     triggerOffset: arg.SampleOffset);
+                while(!dev.IsMeasurementFinished() && !StopAcquireRequested) {
+                    System.Threading.Thread.Sleep(70);
+                }
+                if (StopAcquireRequested) {
+                    dev.AbortMeasurement();
+                    if (StateChanged != null) StateChanged(this, StateEnum.Connected);
+                    return;
+                }
+                var data = dev.FinishTransientMeasurement(mode: arg.SenseMode, triggerCount: count);
+
                 if (DataAcquired != null)
                     DataAcquired(this, data);
                 remaining -= count;

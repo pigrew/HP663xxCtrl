@@ -218,7 +218,7 @@ namespace HP663xxCtrl
             Negative,
             Either
         }
-        public MeasArray MakeTransientMeasurement(
+        public void StartTransientMeasurement(
             SenseModeEnum mode,
             int numPoints = 4096,
             double interval = 15.6e-6,
@@ -257,7 +257,7 @@ namespace HP663xxCtrl
             if(triggerEdge== TriggerSlopeEnum.Immediate || double.IsNaN(level)) {
                 dev.WriteString("TRIG:ACQ:SOURCE BUS");
                 dev.WriteString("ABORT;*OPC");
-                dev.WriteString("INIT:NAME ACQ;:TRIG:ACQ;*OPC?");
+                dev.WriteString("INIT:NAME ACQ;:TRIG:ACQ");
             } else {
                 string slopeStr = "EITH";
                 switch (triggerEdge) {
@@ -270,14 +270,27 @@ namespace HP663xxCtrl
                     ":TRIG:ACQ:SLOPE:" + modeString + " " + slopeStr + ";");
                 dev.WriteString("TRIG:ACQ:SOURCE INT");
                 dev.WriteString("ABORT;*OPC");
-                dev.WriteString("INIT:NAME ACQ;*OPC?");
+                dev.WriteString("INIT:NAME ACQ");
             }
-            StatusByteEnum stb;
+            // Clear status byte
+            Query("*ESR?");
+            dev.WriteString("*OPC");
+        }
+        public bool IsMeasurementFinished() {
+            return (((int.Parse(Query("*ESR?").Trim()) & 1) == 1));
+        }
+        public void AbortMeasurement() {
+            Query("ABORT;*OPC?");
+        }
+        public MeasArray FinishTransientMeasurement(
+            SenseModeEnum mode,
+            int triggerCount = 1) {
+            /*StatusByteEnum stb;
             do {
                 System.Threading.Thread.Sleep(50);
                 stb = (StatusByteEnum)dev.IO.ReadSTB();
             } while (!stb.HasFlag(StatusByteEnum.MesasgeAvailable));
-            dev.ReadString(); // read the +1 from *OPC?
+            dev.ReadString(); // read the +1 from *OPC?*/
 
             if (mode == SenseModeEnum.CURRENT)
                 dev.WriteString("FETCH:ARRay:CURRent?");
@@ -288,6 +301,7 @@ namespace HP663xxCtrl
             MeasArray res = new MeasArray();
             res.Mode = mode;
             res.Data = new double[triggerCount][];
+            int numPoints = data.Length / triggerCount;
             for (int i = 0; i < triggerCount; i++) {
                 res.Data[i] = data.Skip(numPoints*i)
                     .Take(numPoints)
@@ -295,6 +309,7 @@ namespace HP663xxCtrl
                     .ToArray();
 
             }
+            // Might be rounded, so return the actual value, not the requested value
             res.TimeInterval = double.Parse(Query("SENSE:SWEEP:TINT?"));
             return res;
         }

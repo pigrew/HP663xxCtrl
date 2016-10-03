@@ -102,6 +102,7 @@ namespace HP663xxCtrl {
             };
             InstThread = new Thread(InstWorker.ThreadMain);
             InstThread.IsBackground = true;
+
             InstThread.Name = "Instrument Worker";
             InstThread.Start();
         }
@@ -253,6 +254,7 @@ namespace HP663xxCtrl {
 
         private void StopAcquireButton_Click(object sender, RoutedEventArgs e) {
             StopAcquireButton.IsEnabled = false;
+            InstWorker.StopAcquireRequested = true;
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
