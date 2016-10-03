@@ -178,6 +178,10 @@ namespace HP663xxCtrl {
             CH2ProgramLabel.Visibility = CH2Visibility;
             CH2VTextBox.Visibility = CH2Visibility;
             CH2ITextBox.Visibility = CH2Visibility;
+            OVPCheckbox.IsChecked = details.OVP;
+            OVPLevelTextBox.Text = details.OVPVal.ToString();
+            var IDSplit = details.ID.Split(new char[] {','});
+            ModelStatusBarItem.Content = IDSplit[1] + " (" + IDSplit[2].ToUpper() + ")";
         }
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
             if (InstWorker != null) {
@@ -241,8 +245,13 @@ namespace HP663xxCtrl {
         private void ApplyProgramButton_Click(object sender, RoutedEventArgs e) {
             HP663xx.ProgramDetails details = new HP663xx.ProgramDetails();
             string ParseError = "";
+            var blah = OVPLevelTextBox;
+            if (InstWorker == null)
+                return;
+
             details.Enabled = EnableOutputCheckbox.IsChecked.Value;
             details.OCP = OCPCheckbox.IsChecked.Value;
+            details.OVP = OVPCheckbox.IsChecked.Value;
 
             if (!Double.TryParse(CH1VTextBox.Text, out details.V1)) {
                 ParseError = ParseError + "Cannot parse Ch 1 Voltage.\n";
@@ -255,6 +264,15 @@ namespace HP663xxCtrl {
             }
             if (!Double.TryParse(CH2ITextBox.Text, out details.I2)) {
                 ParseError = ParseError + "Cannot parse Ch 2 Current.\n";
+            }
+
+            details.OVPVal = double.NaN;
+            if (details.OVP) {
+                if (!Double.TryParse(OVPLevelTextBox.Text, out details.OVPVal)) {
+                    ParseError = ParseError + "Cannot parse OVP Level.\n";
+                    // 22 V is the max valid value on a 66309D
+                } else if (details.OVPVal < 0 || details.OVPVal > 22.0)
+                    ParseError = ParseError + "OVP is outsize of the valid range (0.0 -> 22.0).\n";
             }
             // FIXME: Add some more range checking
             if (ParseError != "") {

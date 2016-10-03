@@ -144,6 +144,7 @@ namespace HP663xxCtrl {
                 dev.EnableOutput(details.Enabled);
                 dev.SetOCP(details.OCP);
             }
+            dev.SetOVP(details.OVP? details.OVPVal:double.NaN);
             dev.SetIV(1, details.V1, details.I1);
             dev.SetIV(2, details.V2, details.I2);
             if (details.Enabled) {

@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:zed="clr-namespace:ZedGraph;assembly=ZedGraph"
+        xmlns:numericInput="http://gu.se/NumericInput"
         Title="HP663xx Control" Closing="Window_Closing" >
     <Window.Resources>
         <Style TargetType="{x:Type Control}" x:Key="BoldFixed">
@@ -35,6 +36,8 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="auto" />
                             <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="auto" />
+                            <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                     </Grid>
                 </ItemsPanelTemplate>
@@ -42,6 +45,8 @@
             <StatusBarItem  x:Name="ConnectionStatusBarItem" Content="DISCONNECTED" Grid.Column="0"/>
             <Separator   Grid.Column="1"/>
             <StatusBarItem x:Name="ActivityStatusBarItem" Content="IDLE"  Grid.Column="2"/>
+            <Separator   Grid.Column="3"/>
+            <StatusBarItem x:Name="ModelStatusBarItem" Content="-----"  Grid.Column="4"/>
         </StatusBar>
 
         <StackPanel DockPanel.Dock="Left">
@@ -119,6 +124,7 @@
                         <RowDefinition Height="auto"/>
                         <RowDefinition Height="auto"/>
                         <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="1: " />
                     <TextBlock Name="CH2ProgramLabel" Grid.Row="2" Grid.Column="0" Text="2: " />
@@ -129,13 +135,17 @@
                     <TextBox Name="CH2VTextBox" Grid.Row="2" Grid.Column="1" Text="0.0"/>
                     <TextBox Name="CH2ITextBox" Grid.Row="2" Grid.Column="2" Text="0.001"/>
                     <StackPanel Grid.Row="3" Grid.ColumnSpan="3" Orientation="Horizontal" >
-                        <CheckBox Name="EnableOutputCheckbox" Content="EN" />
+                        <CheckBox Name="EnableOutputCheckbox" Content="EN  " />
                         <CheckBox Name="OCPCheckbox" Content="OCP" />
                     </StackPanel>
-                    <DockPanel Grid.Row="4" Grid.ColumnSpan="3" HorizontalAlignment="Right">
-                        <Button DockPanel.Dock="Right" Name="ApplyProgramButton" Content="Apply" Click="ApplyProgramButton_Click" />
+                    <DockPanel Grid.Row="4" Grid.ColumnSpan="3" >
+                        <CheckBox DockPanel.Dock="Left" Name="OVPCheckbox" Content="OVP: " VerticalAlignment="Center" />
+                        <numericInput:DoubleBox Name="OVPLevelTextBox" Text="22" CanValueBeNull="True" MinValue="0" MaxValue="22" />
                     </DockPanel>
                     <DockPanel Grid.Row="5" Grid.ColumnSpan="3" HorizontalAlignment="Right">
+                        <Button DockPanel.Dock="Right" Name="ApplyProgramButton" Content="Apply" Click="ApplyProgramButton_Click" />
+                    </DockPanel>
+                    <DockPanel Grid.Row="6" Grid.ColumnSpan="3" HorizontalAlignment="Right">
                         <Button DockPanel.Dock="Right" Name="ClearProtectionButton" Content="Clear Prot." Click="ClearProtectionButton_Click"/>
                     </DockPanel>
                 </Grid>
@@ -219,7 +229,7 @@
                     <TextBox x:Name="Hysteresis"   Grid.Row="2" Grid.Column="1" Text="0.0" VerticalAlignment="Center" />
                     <TextBlock Text=" A/V"   Grid.Row="2" Grid.Column="2" VerticalAlignment="Center"/>
                     <Label x:Name="SampleOffsetLabel" Grid.Row="3" Grid.Column="0"  Content="Sample Offset: " VerticalAlignment="Center"/>
-                    <TextBox x:Name="SampleOffsetTextBox" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Text="0" VerticalAlignment="Center" />
+                    <numericInput:IntBox x:Name="SampleOffsetTextBox" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Text="0" VerticalAlignment="Center" MinValue="-2000" MaxValue="2000000000"/>
                 </Grid>
             </GroupBox>
             <Button Name="AcquireButton" Content="Acquire" Click="AcquireButton_Click" />

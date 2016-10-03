@@ -91,6 +91,7 @@ namespace HP663xxCtrl
             public double OVPVal;
             public double V1, I1, V2, I2;
             public bool HasDVM, HasOutput2;
+            public string ID;
         }
         public ProgramDetails ReadProgramDetails() {
 
@@ -108,7 +109,8 @@ namespace HP663xxCtrl
                 V2 = HasOutput2? double.Parse(parts[6]):double.NaN,
                 I2 = HasOutput2 ? double.Parse(parts[7]) : double.NaN,
                 HasDVM = HasDVM,
-                HasOutput2 = HasOutput2
+                HasOutput2 = HasOutput2,
+                ID = ID
             };
             return details;
         }

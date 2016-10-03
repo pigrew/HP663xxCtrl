@@ -1,0 +1,449 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Gu.Wpf.NumericInput</name>
+    </assembly>
+    <members>
+        <member name="T:Gu.Wpf.NumericInput.BaseBox">
+            <summary>
+            Base class that adds a couple of dependency properties to TextBox
+            </summary>
+            <summary>
+            Routed events for <see cref="T:Gu.Wpf.NumericInput.BaseBox"/>
+            </summary>
+            <summary>
+            DependencyProperties for <see cref="T:Gu.Wpf.NumericInput.BaseBox"/>
+            </summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.BaseBox.Culture">
+            <summary>
+            Gets or sets the  culture for the control.
+            The control has an explicit culture and does not use <see cref="P:System.Threading.Thread.CurrentUICulture"/>
+            </summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.BaseBox.RegexPattern">
+            <summary>
+            Gets or sets a regex pattern for validation
+            </summary>
+        </member>
+        <member name="F:Gu.Wpf.NumericInput.DecimalDigitsBox`1.DecimalDigitsProperty">
+            <summary>Identifies the Decimals property.</summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.DecimalDigitsBox`1.DecimalDigits">
+            <summary>
+            Gets or sets the number of decimal digits:
+            DecimalDigits="3" sets StringFormat to F3
+            DecimalDigits="-3" sets StringFormat to 0.###
+            Default is null.
+            </summary>
+        </member>
+        <member name="T:Gu.Wpf.NumericInput.NumericBox`1">
+            <summary>DependencyProperties for <see cref="T:Gu.Wpf.NumericInput.NumericBox`1"/>.</summary>
+            <summary>Routed events for <see cref="T:Gu.Wpf.NumericInput.NumericBox`1"/>.</summary>
+            <summary>Baseclass with common functionality for numeric textboxes.</summary>
+            <typeparam name="T">The type of the numeric value.</typeparam>
+        </member>
+        <member name="F:Gu.Wpf.NumericInput.NumericBox`1.ValueChangedEvent">
+            <summary>Identifies the ValueChanged event</summary>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.NumericBox`1.#ctor">
+            <summary>Initializes a new instance of the <see cref="T:Gu.Wpf.NumericInput.NumericBox`1"/> class.</summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.NumericBox`1.CurrentTextValue">
+            <summary>Gets the current value. Will throw if bad format</summary>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.NumericBox`1.CanIncrease(System.Object)">
+            <summary>
+            Invoked when IncreaseCommand.CanExecute() is executed
+            </summary>
+            <param name="parameter">Not used</param>
+            <returns>True if the value can be increased</returns>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.NumericBox`1.Increase(System.Object)">
+            <summary>
+            Invoked when IncreaseCommand.Execute() is executed
+            </summary>
+            <param name="parameter">Not used</param>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.NumericBox`1.CanDecrease(System.Object)">
+            <summary>
+            Invoked when DecreaseCommand.CanExecute() is executed
+            </summary>
+            <param name="parameter">Not used</param>
+            <returns>True if the value can be decreased</returns>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.NumericBox`1.Decrease(System.Object)">
+            <summary>
+            Invoked when DecreaseCommand.Execute() is executed
+            </summary>
+            <param name="parameter">Not used</param>
+        </member>
+        <member name="F:Gu.Wpf.NumericInput.TextSource.None">
+            <summary>
+            Could not determine source of the text
+            </summary>
+        </member>
+        <member name="F:Gu.Wpf.NumericInput.TextSource.UserInput">
+            <summary>
+            User input is the source of the text in the textbox
+            </summary>
+        </member>
+        <member name="F:Gu.Wpf.NumericInput.TextSource.ValueBinding">
+            <summary>
+            The text in the textbox was last updated from binding
+            </summary>
+        </member>
+        <member name="F:Gu.Wpf.NumericInput.ValidationTrigger.PropertyChanged">
+            <summary> Update validation whenever the target property changes </summary>
+        </member>
+        <member name="F:Gu.Wpf.NumericInput.ValidationTrigger.LostFocus">
+            <summary> Update validation only when target element loses focus, or when Binding deactivates </summary>
+        </member>
+        <member name="F:Gu.Wpf.NumericInput.ValidationTrigger.Explicit">
+            <summary> Update validation only by explicit call to BaseBox.UpdateValidation() </summary>
+        </member>
+        <member name="T:Gu.Wpf.NumericInput.FormatString">
+            <summary>Optimized this a lot to avoid caching of results.</summary>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.FormatString.IsFormatString(System.String)">
+            <summary>Checks if <paramref name="format"/> has argument placeholders like 'Value: {0}'</summary>
+            <param name="format">A format string.</param>
+            <returns>True if the string contains format placeholders.</returns>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.FormatString.IsValidFormatString(System.String,System.Int32)">
+            <summary>Check if <paramref name="format"/> is a valid format string for <paramref name="numberOfArguments"/></summary>
+            <param name="format">The format string.</param>
+            <param name="numberOfArguments">The number of format arguments.</param>
+            <returns>True if <paramref name="format"/> is well formed and matches <paramref name="numberOfArguments"/></returns>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.FormatString.IsValidFormat(System.String,System.Int32@,System.Nullable{System.Boolean}@)">
+            <summary>
+            Check a format string for errors and other properties.
+            Does not throw nor allocate no need to cache the result as it is about as fast as a dictionary lookup for common strings.
+            </summary>
+            <param name="format">The format string to check</param>
+            <param name="indexCount">The number of format indices or -1 if error</param>
+            <param name="anyItemHasFormat">If any index has formatting i.e: {0:N}</param>
+            <returns>True if <paramref name="format"/> is a valid format string</returns>
+        </member>
+        <member name="T:Gu.Wpf.NumericInput.NumericBox">
+            <summary>
+            Resource keys for <see cref="T:Gu.Wpf.NumericInput.NumericBox"/>
+            </summary>
+            <summary>
+            Attached properties for <see cref="T:Gu.Wpf.NumericInput.NumericBox"/>
+            </summary>
+        </member>
+        <member name="T:Gu.Wpf.NumericInput.EmptyEnumerator">
+            <summary>
+            Returns an Enumerator that enumerates over nothing.
+            </summary>
+        </member>
+        <member name="F:Gu.Wpf.NumericInput.EmptyEnumerator.Instance">
+            <summary>
+            Read-Only instance of an Empty Enumerator.
+            </summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.EmptyEnumerator.System#Collections#IEnumerator#Current">
+            <summary>
+            Gets throws <see cref="T:System.InvalidOperationException"/>
+            </summary>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.EmptyEnumerator.Reset">
+            <summary>
+            Does nothing.
+            </summary>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.EmptyEnumerator.MoveNext">
+            <summary>
+            Returns false.
+            </summary>
+            <returns>false</returns>
+        </member>
+        <member name="T:Gu.Wpf.NumericInput.FrameworkObject">
+            <summary>
+            http://referencesource.microsoft.com/#PresentationFramework/src/Framework/MS/Internal/FrameworkObject.cs,301f142557ad0322
+            </summary>
+        </member>
+        <member name="T:Gu.Wpf.NumericInput.DecimalBox">
+            <summary>A <see cref="T:System.Windows.Controls.TextBox"/> for inut of <see cref="T:System.Decimal"/>.</summary>
+        </member>
+        <member name="T:Gu.Wpf.NumericInput.DoubleBox">
+            <summary>A <see cref="T:System.Windows.Controls.TextBox"/> for inut of <see cref="T:System.Double"/> or nullable double.</summary>
+        </member>
+        <member name="T:Gu.Wpf.NumericInput.FloatBox">
+            <summary>
+            A <see cref="T:System.Windows.Controls.TextBox"/> for inut of <see cref="T:System.Single"/>
+            </summary>
+        </member>
+        <member name="T:Gu.Wpf.NumericInput.IntBox">
+            <summary>A <see cref="T:System.Windows.Controls.TextBox"/> for inut of <see cref="T:System.Int32"/></summary>
+        </member>
+        <member name="T:Gu.Wpf.NumericInput.Properties.Resources">
+            <summary>
+              A strongly-typed resource class, for looking up localized strings, etc.
+            </summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.Properties.Resources.ResourceManager">
+            <summary>
+              Returns the cached ResourceManager instance used by this class.
+            </summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.Properties.Resources.Culture">
+            <summary>
+              Overrides the current thread's CurrentUICulture property for all
+              resource lookups using this strongly typed resource class.
+            </summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.Properties.Resources.Please_enter_a_number">
+            <summary>
+              Looks up a localized string similar to Please enter a number..
+            </summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.Properties.Resources.Please_enter_a_valid_number">
+            <summary>
+              Looks up a localized string similar to Please enter a valid number..
+            </summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.Properties.Resources.Please_enter_a_value_between__0__and__1__">
+            <summary>
+              Looks up a localized string similar to Please enter a value between {0} and {1}..
+            </summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.Properties.Resources.Please_enter_a_value_greater_than_or_equal_to__0__">
+            <summary>
+              Looks up a localized string similar to Please enter a value greater than or equal to {0}..
+            </summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.Properties.Resources.Please_enter_a_value_less_than_or_equal_to__0__">
+            <summary>
+              Looks up a localized string similar to Please enter a value less than or equal to {0}..
+            </summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.Properties.Resources.Please_provide_valid_input">
+            <summary>
+              Looks up a localized string similar to Please provide valid input..
+            </summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.Properties.Resources.Syntax_error_in_regex_pattern">
+            <summary>
+              Looks up a localized string similar to Syntax error in regex pattern..
+            </summary>
+        </member>
+        <member name="T:Gu.Wpf.NumericInput.SpinnerDecorator">
+            <summary>
+            Add increase / decrease buttons to a <see cref="T:Gu.Wpf.NumericInput.NumericBox`1"/>
+            </summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.SpinnerDecorator.Child">
+            <summary>
+            Gets or sets the single child of a <see cref="T:Gu.Wpf.NumericInput.SpinnerDecorator" />
+            </summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.SpinnerDecorator.LogicalChildren">
+            <summary>
+            Gets enumerator to logical children.
+            </summary>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.SpinnerDecorator.ShouldSerializeContent">
+            <summary>
+            This method is used by TypeDescriptor to determine if this property should
+            be serialized.
+            http://referencesource.microsoft.com/#PresentationFramework/src/Framework/System/Windows/Controls/ContentControl.cs,164
+            </summary>
+            <returns>True if the value should be serialized</returns>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.SpinnerDecorator.OnChildChanged(Gu.Wpf.NumericInput.BaseBox,Gu.Wpf.NumericInput.BaseBox)">
+            <summary>
+            This method is invoked when the Child property changes.
+            http://referencesource.microsoft.com/#PresentationFramework/src/Framework/System/Windows/Controls/ContentControl.cs,262
+            </summary>
+            <param name="oldChild">The old value of the Child property.</param>
+            <param name="newChild">The new value of the Child property.</param>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.SpinnerDecorator.OnCreateAutomationPeer">
+            <summary>
+            Creates AutomationPeer (<see cref="M:System.Windows.UIElement.OnCreateAutomationPeer"/>)
+            </summary>
+            <returns>An <see cref="M:System.Windows.UIElement.OnCreateAutomationPeer"/> for the <see cref="T:Gu.Wpf.NumericInput.SpinnerDecorator"/></returns>
+        </member>
+        <member name="T:Gu.Wpf.NumericInput.LongBox">
+            <summary>
+            A <see cref="T:System.Windows.Controls.TextBox"/> for inut of <see cref="T:System.Int64"/>
+            </summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.Touch.TouchProcessInfo.Default">
+            <summary>
+            Gets the default TouchProcessInfo pointing to C:\Program Files\Common Files\Microsoft Shared\Ink\TabTip.exe
+            </summary>
+        </member>
+        <member name="T:Gu.Wpf.NumericInput.CanParseValidationResult">
+            <summary>This <see cref="T:System.Windows.Controls.ValidationResult"/> is returned when the user input cannot be parsed.</summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.CanParseValidationResult.Type">
+            <summary>Gets the type of the box, i.e. <see cref="T:System.Double"/> for a <see cref="T:Gu.Wpf.NumericInput.DoubleBox"/>.</summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.CanParseValidationResult.Text">
+            <summary>Gets the text that was found invalid.</summary>
+        </member>
+        <member name="T:Gu.Wpf.NumericInput.RegexValidationResult">
+            <summary>This <see cref="T:System.Windows.Controls.ValidationResult"/> is returned when the user input does not match a regex pattern.</summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.RegexValidationResult.Text">
+            <summary>Gets the text that was found invalid.</summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.RegexValidationResult.Pattern">
+            <summary>Gets the regex pattern that was used for validation.</summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.RegexValidationResult.Exception">
+            <summary>
+            Gets the <see cref="P:Gu.Wpf.NumericInput.RegexValidationResult.Exception"/> that was thrown during <see cref="M:System.Text.RegularExpressions.Regex.Match(System.String,System.String)"/> if any.
+            Null if no exception was thrown.
+            </summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.RequiredButMissingValidationResult.Type">
+            <summary>Gets the type of the box, i.e. <see cref="T:System.Double"/> for a <see cref="T:Gu.Wpf.NumericInput.DoubleBox"/>.</summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.RequiredButMissingValidationResult.Text">
+            <summary>Gets the text that was found invalid.</summary>
+        </member>
+        <member name="T:Gu.Wpf.NumericInput.FormatAndCulture`1">
+            <summary>Metadata about a validation error message.</summary>
+            <typeparam name="T">The specific type.</typeparam>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.FormatAndCulture`1.ResourceKey">
+            <inheritdoc/>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.FormatAndCulture`1.FormatProvider">
+            <inheritdoc/>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.FormatAndCulture`1.Format">
+            <inheritdoc/>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.FormatAndCulture`1.AssertFormat(System.IFormatProvider,System.String)">
+            <summary>Assert that <paramref name="format"/> is valid.</summary>
+            <param name="culture">The culture.</param>
+            <param name="format">The format string.</param>
+            <exception cref="T:System.InvalidOperationException">If the format does not match the expected.</exception>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.IFormatAndCulture.ResourceKey">
+            <summary>Gets the name of the resource. I.e. Properties.Resources.ResourceManager.GetString(<see cref="P:Gu.Wpf.NumericInput.IFormatAndCulture.ResourceKey"/>, <see cref="T:System.Globalization.CultureInfo"/>)</summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.IFormatAndCulture.FormatProvider">
+            <summary>Gets the culture for which the <see cref="P:Gu.Wpf.NumericInput.IFormatAndCulture.Format"/> is for. If no localization is found <see cref="P:System.Globalization.CultureInfo.InvariantCulture"/> will be used.</summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.IFormatAndCulture.Format">
+            <summary>Gets the localized format string.</summary>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.IFormatAndCulture.GetFormat(System.IFormatProvider)">
+            <summary>
+            Gets the format in <paramref name="culture"/> if it exists.
+            Returns format for <see cref="P:System.Globalization.CultureInfo.InvariantCulture"/> if not exists.
+            </summary>
+            <param name="culture">The culture.</param>
+            <returns>A format string for a validation error message.</returns>
+        </member>
+        <member name="T:Gu.Wpf.NumericInput.NoParameterFormatAndCulture">
+            <summary>A <see cref="T:Gu.Wpf.NumericInput.IFormatAndCulture"/> for no parameters.</summary>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.NoParameterFormatAndCulture.CreateDefault(System.String)">
+            <summary>Create a <see cref="T:Gu.Wpf.NumericInput.NoParameterFormatAndCulture"/> for a resource in <see cref="T:Gu.Wpf.NumericInput.Properties.Resources"/>.</summary>
+            <param name="resourceKey">A key in <see cref="T:Gu.Wpf.NumericInput.Properties.Resources"/></param>
+            <returns>A <see cref="T:Gu.Wpf.NumericInput.NoParameterFormatAndCulture"/> that can be used for formatting error messages.</returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">If <paramref name="resourceKey"/> is not found in <see cref="T:Gu.Wpf.NumericInput.Properties.Resources"/>.</exception>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.NoParameterFormatAndCulture.GetOrCreate(System.IFormatProvider)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.NoParameterFormatAndCulture.AssertFormat(System.IFormatProvider,System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.TwoParameterFormatAndCulture.CreateDefault(System.String)">
+            <summary>Create a <see cref="T:Gu.Wpf.NumericInput.TwoParameterFormatAndCulture"/> for a resource in <see cref="T:Gu.Wpf.NumericInput.Properties.Resources"/>.</summary>
+            <param name="resourceKey">A key in <see cref="T:Gu.Wpf.NumericInput.Properties.Resources"/></param>
+            <returns>A <see cref="T:Gu.Wpf.NumericInput.TwoParameterFormatAndCulture"/> that can be used for formatting error messages.</returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">If <paramref name="resourceKey"/> is not found in <see cref="T:Gu.Wpf.NumericInput.Properties.Resources"/>.</exception>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.TwoParameterFormatAndCulture.GetOrCreate(System.IFormatProvider)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.TwoParameterFormatAndCulture.AssertFormat(System.IFormatProvider,System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.NumericValidationResult.CurrentCulture">
+            <summary>Gets the current culture used in the <see cref="T:Gu.Wpf.NumericInput.NumericBox`1"/></summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.NumericValidationResult.FormatAndCulture">
+            <summary>Gets the culture and format used when formatting the <see cref="P:System.Windows.Controls.ValidationResult.ErrorContent"/>.</summary>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.NumericValidationResult.ToString">
+            <inheritdoc/>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.OneParameterFormatAndCulture.CreateDefault(System.String)">
+            <summary>Create a <see cref="T:Gu.Wpf.NumericInput.OneParameterFormatAndCulture"/> for a resource in <see cref="T:Gu.Wpf.NumericInput.Properties.Resources"/>.</summary>
+            <param name="resourceKey">A key in <see cref="T:Gu.Wpf.NumericInput.Properties.Resources"/></param>
+            <returns>A <see cref="T:Gu.Wpf.NumericInput.OneParameterFormatAndCulture"/> that can be used for formatting error messages.</returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">If <paramref name="resourceKey"/> is not found in <see cref="T:Gu.Wpf.NumericInput.Properties.Resources"/>.</exception>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.OneParameterFormatAndCulture.GetOrCreate(System.IFormatProvider)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.OneParameterFormatAndCulture.AssertFormat(System.IFormatProvider,System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="T:Gu.Wpf.NumericInput.OutOfRangeValidationResult">
+            <summary>This <see cref="T:System.Windows.Controls.ValidationResult"/> is returned when <see cref="P:Gu.Wpf.NumericInput.OutOfRangeValidationResult.Value"/> in the valid range of <see cref="P:Gu.Wpf.NumericInput.OutOfRangeValidationResult.Max"/> and <see cref="P:Gu.Wpf.NumericInput.OutOfRangeValidationResult.Min"/></summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.OutOfRangeValidationResult.Value">
+            <summary>Gets the current value at the time of validation.</summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.OutOfRangeValidationResult.Min">
+            <summary>Gets the maximum allowed value, can be null if no lower limit.</summary>
+        </member>
+        <member name="P:Gu.Wpf.NumericInput.OutOfRangeValidationResult.Max">
+            <summary>Gets the maximum allowed value, can be null if no upper limit..</summary>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.IsGreaterThanOrEqualToMinRule`1.Validate(System.Object,System.Globalization.CultureInfo,System.Windows.Data.BindingExpressionBase)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.IsGreaterThanOrEqualToMinRule`1.Validate(System.Object,System.Globalization.CultureInfo)">
+            <summary> This should never be called.</summary>
+            <param name="value">_</param>
+            <param name="cultureInfo">__</param>
+            <returns>___</returns>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.IsLessThanOrEqualToMaxRule`1.Validate(System.Object,System.Globalization.CultureInfo,System.Windows.Data.BindingExpressionBase)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.IsLessThanOrEqualToMaxRule`1.Validate(System.Object,System.Globalization.CultureInfo)">
+            <summary> This should never be called.</summary>
+            <param name="value">_</param>
+            <param name="cultureInfo">__</param>
+            <returns>___</returns>
+        </member>
+        <member name="T:Gu.Wpf.NumericInput.IsGreaterThanValidationResult">
+            <summary>This <see cref="T:System.Windows.Controls.ValidationResult"/> is returned when <see cref="P:Gu.Wpf.NumericInput.NumericBox`1.Value"/> is greater than <see cref="P:Gu.Wpf.NumericInput.NumericBox`1.MaxValue"/></summary>
+        </member>
+        <member name="T:Gu.Wpf.NumericInput.IsLessThanValidationResult">
+            <summary>This <see cref="T:System.Windows.Controls.ValidationResult"/> is returned when <see cref="P:Gu.Wpf.NumericInput.NumericBox`1.Value"/> is less than <see cref="P:Gu.Wpf.NumericInput.NumericBox`1.MinValue"/></summary>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.RegexValidationRule.Validate(System.Object,System.Globalization.CultureInfo,System.Windows.Data.BindingExpressionBase)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.RegexValidationRule.Validate(System.Object,System.Globalization.CultureInfo)">
+            <summary> This should never be called.</summary>
+            <param name="value">_</param>
+            <param name="cultureInfo">__</param>
+            <returns>___</returns>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.CanParse`1.Validate(System.Object,System.Globalization.CultureInfo,System.Windows.Data.BindingExpressionBase)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Gu.Wpf.NumericInput.CanParse`1.Validate(System.Object,System.Globalization.CultureInfo)">
+            <summary> This should never be called.</summary>
+            <param name="value">_</param>
+            <param name="cultureInfo">__</param>
+            <returns>___</returns>
+        </member>
+    </members>
+</doc>
