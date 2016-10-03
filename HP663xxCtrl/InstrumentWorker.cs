@@ -28,7 +28,8 @@ namespace HP663xxCtrl {
             IRange,
             Acquire,
             Program,
-            ClearProtection
+            ClearProtection,
+            Log
         }
         struct Command {
             public CommandEnum cmd;
@@ -78,6 +79,9 @@ namespace HP663xxCtrl {
                         case CommandEnum.Acquire:
                             DoAcquisition((AcquireDetails)cmd.arg);
                             break;
+                        case CommandEnum.Log:
+                            DoLog((HP663xx.SenseModeEnum)cmd.arg);
+                            break;
                         case CommandEnum.Program:
                             DoProgram((HP663xx.ProgramDetails)cmd.arg);
                             break;
@@ -111,7 +115,7 @@ namespace HP663xxCtrl {
 
             int remaining = arg.SegmentCount;
             while (remaining > 0 && !StopRequested && !StopAcquireRequested) {
-                int count=0;
+                int count = 0;
                 if (arg.triggerEdge == HP663xx.TriggerSlopeEnum.Immediate)
                     count = 1;
                 else
@@ -124,10 +128,11 @@ namespace HP663xxCtrl {
                     level: arg.Level,
                     triggerCount: count,
                     triggerOffset: arg.SampleOffset);
-                while(!dev.IsMeasurementFinished() && !StopAcquireRequested) {
+                while (!dev.IsMeasurementFinished() && !StopAcquireRequested
+                    && !StopRequested) {
                     System.Threading.Thread.Sleep(70);
                 }
-                if (StopAcquireRequested) {
+                if (StopAcquireRequested || StopRequested) {
                     dev.AbortMeasurement();
                     if (StateChanged != null) StateChanged(this, StateEnum.Connected);
                     return;
@@ -147,6 +152,32 @@ namespace HP663xxCtrl {
             EventQueue.Add(new Command() {
                 cmd = CommandEnum.Acquire,
                 arg = details
+            });
+        }
+        public event EventHandler<HP663xx.LoggerDatapoint> LogerDatapointAcquired;
+        void DoLog(HP663xx.SenseModeEnum mode) {
+            if (StateChanged != null) StateChanged(this, StateEnum.Measuring);
+            dev.SetupLogging(mode);
+
+            while (!StopRequested && !StopAcquireRequested) {
+
+                if (StopAcquireRequested || StopRequested) {
+                    dev.AbortMeasurement();
+                    if (StateChanged != null) StateChanged(this, StateEnum.Connected);
+                    return;
+                }
+                var data = dev.MeasureLoggingPoint(mode);
+                if (LogerDatapointAcquired != null)
+                    LogerDatapointAcquired(this, data);
+            }
+            if (StateChanged != null) StateChanged(this, StateEnum.Connected);
+        }
+        public void RequestLog(HP663xx.SenseModeEnum mode) {
+            if (StopAcquireRequested == true)
+                return;
+            EventQueue.Add(new Command() {
+                cmd = CommandEnum.Log,
+                arg = mode
             });
         }
         void DoProgram(HP663xx.ProgramDetails details) {

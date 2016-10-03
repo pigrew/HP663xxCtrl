@@ -123,7 +123,6 @@ namespace HP663xxCtrl
                 details.MaxI2 = double.Parse(parts[0]);
 
             }
-
             return details;
         }
         public InstrumentState ReadState(bool measureCh2=true, bool measureDVM=true) {
@@ -218,6 +217,67 @@ namespace HP663xxCtrl
             Negative,
             Either
         }
+        public void SetupLogging(
+            SenseModeEnum mode
+            ) {
+            int numPoints = 4096;
+            double interval = 15.6e-6;
+            string modeString;
+            int triggerOffset = 0;
+
+            if (mode == SenseModeEnum.DVM && !HasDVM)
+                throw new Exception();
+            switch (mode) {
+                case SenseModeEnum.CURRENT: modeString = "CURR"; break;
+                case SenseModeEnum.VOLTAGE: modeString = "VOLT"; break;
+                case SenseModeEnum.DVM: modeString = "DVM"; break;
+                default: throw new InvalidOperationException("Unknown transient measurement mode");
+            }
+            // Immediate always has a trigger count of 1
+            dev.WriteString("SENSe:FUNCtion \"" + modeString + "\"");
+            dev.WriteString("SENSe:SWEEP:POINTS " + numPoints.ToString() + "; " +
+                "TINTerval " + interval.ToString() + ";" +
+                "OFFSET:POINTS " + triggerOffset.ToString());
+            dev.WriteString("TRIG:ACQ:SOURCE BUS");
+            dev.WriteString("ABORT;*WAI");
+            //dev.WriteString("INIT:NAME ACQ;:TRIG:ACQ");
+
+            Query("*OPC?");
+        }
+        public struct LoggerDatapoint {
+            public double Min, Mean, Max, RMS;
+            public DateTime time;
+        }
+        public LoggerDatapoint MeasureLoggingPoint( SenseModeEnum mode) {
+            LoggerDatapoint ret = new LoggerDatapoint();
+            string rsp;
+            string[] parts;
+            switch(mode) {
+                case SenseModeEnum.CURRENT:
+                    rsp = Query("MEAS:CURR?;:FETCH:CURR:MIN?;MAX?;ACDC?").Trim();
+                    parts = rsp.Split(new char[] { ';' });
+                    ret.Mean = double.Parse(parts[0]);
+                    ret.Min = double.Parse(parts[1]);
+                    ret.Max = double.Parse(parts[2]);
+                    ret.RMS = double.Parse(parts[3]);
+                    break;
+                case SenseModeEnum.VOLTAGE:
+                    rsp = Query("MEAS:VOLT?;:FETCH:VOLT:MIN?;MAX?;ACDC?").Trim();
+                    parts = rsp.Split(new char[] { ';' });
+                    ret.Mean = double.Parse(parts[0]);
+                    ret.Min = double.Parse(parts[1]);
+                    ret.Max = double.Parse(parts[2]);
+                    ret.RMS = double.Parse(parts[3]);
+                    break;
+                case SenseModeEnum.DVM:
+                    rsp = Query("MEAS:DVM?").Trim();
+                    parts = rsp.Split(new char[] { ';' });
+                    ret.Mean = double.Parse(parts[0]);
+                    break;
+            }
+            ret.time = DateTime.Now;
+            return ret;
+        }
         public void StartTransientMeasurement(
             SenseModeEnum mode,
             int numPoints = 4096,
@@ -256,7 +316,7 @@ namespace HP663xxCtrl
                 "OFFSET:POINTS " + triggerOffset.ToString());
             if(triggerEdge== TriggerSlopeEnum.Immediate || double.IsNaN(level)) {
                 dev.WriteString("TRIG:ACQ:SOURCE BUS");
-                dev.WriteString("ABORT;*OPC");
+                dev.WriteString("ABORT;*WAI");
                 dev.WriteString("INIT:NAME ACQ;:TRIG:ACQ");
             } else {
                 string slopeStr = "EITH";
@@ -269,7 +329,7 @@ namespace HP663xxCtrl
                     ":TRIG:ACQ:LEVEL:" + modeString + " " + level.ToString() + ";" +
                     ":TRIG:ACQ:SLOPE:" + modeString + " " + slopeStr + ";");
                 dev.WriteString("TRIG:ACQ:SOURCE INT");
-                dev.WriteString("ABORT;*OPC");
+                dev.WriteString("ABORT;*WAI");
                 dev.WriteString("INIT:NAME ACQ");
             }
             // Clear status byte

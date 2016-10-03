@@ -76,6 +76,10 @@ namespace HP663xxCtrl {
             {
                 Dispatcher.BeginInvoke((Action)(() => { HandleProgramDetailsReadback(sender2, details); }));
             };
+            InstWorker.LogerDatapointAcquired += delegate(object sender2, HP663xx.LoggerDatapoint point)
+            {
+                Dispatcher.BeginInvoke((Action)(() => { HandleLogDatapoint(sender2, point); }));
+            };
             InstWorker.StateChanged += delegate(object sender2, InstrumentWorker.StateEnum state)
             {
                 Dispatcher.BeginInvoke((Action)(() =>
@@ -87,6 +91,8 @@ namespace HP663xxCtrl {
                             ApplyProgramButton.IsEnabled = true;
                             StopAcquireButton.IsEnabled = false;
                             ClearProtectionButton.IsEnabled = true;
+                            LogButton.IsEnabled = true;
+                            StopLoggingButton.IsEnabled = false;
                             break;
                         case InstrumentWorker.StateEnum.Disconnected:
                             ConnectionStatusBarItem.Content = "DISCONNECTED";
@@ -94,6 +100,8 @@ namespace HP663xxCtrl {
                             ApplyProgramButton.IsEnabled = false;
                             StopAcquireButton.IsEnabled = false;
                             ClearProtectionButton.IsEnabled = false;
+                            LogButton.IsEnabled = false;
+                            ModelStatusBarItem.Content = "-----";
                             break;
                         case InstrumentWorker.StateEnum.Measuring:
                             ConnectionStatusBarItem.Content = "MEASURING"; break;
@@ -211,7 +219,53 @@ namespace HP663xxCtrl {
                 }
             }
         }
+        DateTime LogStartTime;
+        void HandleLogDatapoint(object sender, HP663xx.LoggerDatapoint dp) {
+            zgc.GraphPane.CurveList[0].AddPoint(
+                dp.time.Subtract(LogStartTime).TotalSeconds,
+                dp.Min);
+            zgc.GraphPane.CurveList[1].AddPoint(
+                dp.time.Subtract(LogStartTime).TotalSeconds,
+                dp.Mean);
+            zgc.GraphPane.CurveList[2].AddPoint(
+                dp.time.Subtract(LogStartTime).TotalSeconds,
+                dp.Max);
+            zgc.AxisChange();
+            zgc.Invalidate();
+        }
+        private void LogButton_Click(object sender, RoutedEventArgs e) {
 
+            if (InstWorker != null) {
+                LogStartTime = DateTime.Now;
+                InstWorker.StopAcquireRequested = false;
+                AcquireButton.IsEnabled = false;
+                ApplyProgramButton.IsEnabled = false;
+                ClearProtectionButton.IsEnabled = false;
+                StopLoggingButton.IsEnabled = true;
+                zgc.GraphPane.CurveList.Clear();
+                zgc.GraphPane.AddCurve("Min", new double[0], new double[0], System.Drawing.Color.Blue);
+                zgc.GraphPane.AddCurve("Mean", new double[0], new double[0], System.Drawing.Color.Black);
+                zgc.GraphPane.AddCurve("Max", new double[0], new double[0], System.Drawing.Color.Red);
+
+                HP663xx.SenseModeEnum mode;
+                if (LogVoltageRadioButton.IsChecked.Value) {
+                    mode = HP663xx.SenseModeEnum.VOLTAGE;
+                    zgc.GraphPane.YAxis.Title.Text = "Voltage (V)";
+                } else if (LogCurrentRadioButton.IsChecked.Value) {
+                    mode = HP663xx.SenseModeEnum.CURRENT;
+                    zgc.GraphPane.YAxis.Title.Text = "Current (A)";
+                } else {
+                    mode = HP663xx.SenseModeEnum.DVM;
+                    zgc.GraphPane.YAxis.Title.Text = "Voltage (V)";
+                }
+                InstWorker.RequestLog(mode);
+            }
+        }
+
+        private void StopLoggingButton_Click(object sender, RoutedEventArgs e) {
+            StopLoggingButton.IsEnabled = false;
+            InstWorker.StopAcquireRequested = true;
+        }
         private void AcquireButton_Click(object sender, RoutedEventArgs e) {
 
             if (InstWorker != null) {
@@ -220,6 +274,7 @@ namespace HP663xxCtrl {
                 ApplyProgramButton.IsEnabled = false;
                 ClearProtectionButton.IsEnabled = false;
                 StopAcquireButton.IsEnabled = true;
+                LogButton.IsEnabled = false;
                 zgc.GraphPane.CurveList.Clear();
             
                 InstrumentWorker.AcquireDetails details = new InstrumentWorker.AcquireDetails();

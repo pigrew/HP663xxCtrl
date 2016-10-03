@@ -177,66 +177,115 @@
                 </Grid>
             </GroupBox>
         </StackPanel>
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
-            <GroupBox Header="Acquisition" >
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition/>
-                        <RowDefinition/>
-                        <RowDefinition/>
-                        <RowDefinition/>
-                    </Grid.RowDefinitions>
-                    <StackPanel Grid.ColumnSpan="3" Orientation="Horizontal">
-                        <RadioButton GroupName="AcqSenseMode" Name="AcqVoltageRadioButton"  Tag="V" Content="Voltage "/>
-                        <RadioButton GroupName="AcqSenseMode" Name="AcqCurrentRadioButton" Tag="I" Content="Current " IsChecked="True"/>
-                        <RadioButton GroupName="AcqSenseMode" Name="AcqDVMRadioButton" Tag="DVM" Content="DVM "/>
+        <TabControl TabStripPlacement="Top" DockPanel.Dock="Top" >
+            <TabItem Name="AcquisitionTabItem" Header="Acquisition">
+                <StackPanel Orientation="Horizontal">
+                    <GroupBox Header="Acquisition" >
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.ColumnSpan="3" Orientation="Horizontal">
+                                <RadioButton GroupName="AcqSenseMode" Name="AcqVoltageRadioButton"  Tag="V" Content="Voltage "/>
+                                <RadioButton GroupName="AcqSenseMode" Name="AcqCurrentRadioButton" Tag="I" Content="Current " IsChecked="True"/>
+                                <RadioButton GroupName="AcqSenseMode" Name="AcqDVMRadioButton" Tag="DVM" Content="DVM "/>
+                            </StackPanel>
+                            <Label x:Name="DurationLabel" Grid.Row="1" Grid.Column="0" Content="Time (s): " VerticalAlignment="Center"/>
+                            <TextBox x:Name="DurationTextBox" Grid.Row="1" Grid.Column="1"  Text="1.0" VerticalAlignment="Center"/>
+                            <Label x:Name="NumPointsLabel" Grid.Row="2" Grid.Column="0"  Content="Num Pts: " VerticalAlignment="Center"/>
+                            <TextBox x:Name="NumPtsTextBox" Grid.Row="2" Grid.Column="1" Text="1024" VerticalAlignment="Center" />
+                            <Label x:Name="NumSegmentsLabel" Grid.Row="3" Grid.Column="0"  Content="Segments: " VerticalAlignment="Center"/>
+                            <TextBox x:Name="NumSegmentsTextBox" Grid.Row="3" Grid.Column="1" Text="1" VerticalAlignment="Center" />
+                        </Grid>
+                    </GroupBox>
+                    <GroupBox Header="Trigger">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <ComboBox Name="TriggerComboBox" Grid.Row="0" Grid.ColumnSpan="3"  AllowDrop="True" SelectedIndex="0">
+                                <ComboBoxItem Tag="IMMED">Immediate</ComboBoxItem>
+                                <ComboBoxItem Tag="POS">Positive Slope</ComboBoxItem>
+                                <ComboBoxItem Tag="NEG">Negative Slope</ComboBoxItem>
+                                <ComboBoxItem Tag="EITHER">Either Slope</ComboBoxItem>
+                            </ComboBox>
+                            <Label x:Name="TrigLevelLabel" Grid.Row="1" Grid.Column="0"  Content="Trigger Level: " VerticalAlignment="Center"/>
+                            <TextBox x:Name="TrigLevelTextBox"   Grid.Row="1" Grid.Column="1" Text="0.0" VerticalAlignment="Center" />
+                            <TextBlock Text=" A/V"   Grid.Row="1" Grid.Column="2" VerticalAlignment="Center"/>
+                            <Label Grid.Row="2" Grid.Column="0"  Content="Hysteresis: " VerticalAlignment="Center"/>
+                            <TextBox x:Name="Hysteresis"   Grid.Row="2" Grid.Column="1" Text="0.0" VerticalAlignment="Center" />
+                            <TextBlock Text=" A/V"   Grid.Row="2" Grid.Column="2" VerticalAlignment="Center"/>
+                            <Label x:Name="SampleOffsetLabel" Grid.Row="3" Grid.Column="0"  Content="Sample Offset: " VerticalAlignment="Center"/>
+                            <numericInput:IntBox x:Name="SampleOffsetTextBox" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Text="0" VerticalAlignment="Center" MinValue="-2000" MaxValue="2000000000"/>
+                        </Grid>
+                    </GroupBox>
+                    <StackPanel>
+                        <Button Name="AcquireButton" Content="Acquire" Click="AcquireButton_Click" IsEnabled="False"/>
+                        <Button Name="StopAcquireButton" Content="Stop" Click="StopAcquireButton_Click" IsEnabled="False"/>
                     </StackPanel>
-                    <Label x:Name="DurationLabel" Grid.Row="1" Grid.Column="0" Content="Time (s): " VerticalAlignment="Center"/>
-                    <TextBox x:Name="DurationTextBox" Grid.Row="1" Grid.Column="1"  Text="1.0" VerticalAlignment="Center"/>
-                    <Label x:Name="NumPointsLabel" Grid.Row="2" Grid.Column="0"  Content="Num Pts: " VerticalAlignment="Center"/>
-                    <TextBox x:Name="NumPtsTextBox" Grid.Row="2" Grid.Column="1" Text="1024" VerticalAlignment="Center" />
-                    <Label x:Name="NumSegmentsLabel" Grid.Row="3" Grid.Column="0"  Content="Segments: " VerticalAlignment="Center"/>
-                    <TextBox x:Name="NumSegmentsTextBox" Grid.Row="3" Grid.Column="1" Text="1" VerticalAlignment="Center" />
-                </Grid>
-            </GroupBox>
-            <GroupBox Header="Trigger">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="1*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition/>
-                        <RowDefinition/>
-                        <RowDefinition/>
-                        <RowDefinition/>
-                    </Grid.RowDefinitions>
-                    <ComboBox Name="TriggerComboBox" Grid.Row="0" Grid.ColumnSpan="3"  AllowDrop="True" SelectedIndex="0">
-                        <ComboBoxItem Tag="IMMED">Immediate</ComboBoxItem>
-                        <ComboBoxItem Tag="POS">Positive Slope</ComboBoxItem>
-                        <ComboBoxItem Tag="NEG">Negative Slope</ComboBoxItem>
-                        <ComboBoxItem Tag="EITHER">Either Slope</ComboBoxItem>
-                    </ComboBox>
-                    <Label x:Name="TrigLevelLabel" Grid.Row="1" Grid.Column="0"  Content="Trigger Level: " VerticalAlignment="Center"/>
-                    <TextBox x:Name="TrigLevelTextBox"   Grid.Row="1" Grid.Column="1" Text="0.0" VerticalAlignment="Center" />
-                    <TextBlock Text=" A/V"   Grid.Row="1" Grid.Column="2" VerticalAlignment="Center"/>
-                    <Label Grid.Row="2" Grid.Column="0"  Content="Hysteresis: " VerticalAlignment="Center"/>
-                    <TextBox x:Name="Hysteresis"   Grid.Row="2" Grid.Column="1" Text="0.0" VerticalAlignment="Center" />
-                    <TextBlock Text=" A/V"   Grid.Row="2" Grid.Column="2" VerticalAlignment="Center"/>
-                    <Label x:Name="SampleOffsetLabel" Grid.Row="3" Grid.Column="0"  Content="Sample Offset: " VerticalAlignment="Center"/>
-                    <numericInput:IntBox x:Name="SampleOffsetTextBox" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Text="0" VerticalAlignment="Center" MinValue="-2000" MaxValue="2000000000"/>
-                </Grid>
-            </GroupBox>
-            <StackPanel>
-                <Button Name="AcquireButton" Content="Acquire" Click="AcquireButton_Click" IsEnabled="False"/>
-                <Button Name="StopAcquireButton" Content="Stop" Click="StopAcquireButton_Click" IsEnabled="False"/>
-            </StackPanel>
-        </StackPanel>
+                </StackPanel>
+            </TabItem>
+            
+            <TabItem Name="LoggingTabItem" Header="Logging">
+                <StackPanel Orientation="Horizontal">
+                    <GroupBox Header="Acquisition" >
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.ColumnSpan="3" Orientation="Horizontal">
+                                <RadioButton GroupName="LogSenseMode" Name="LogVoltageRadioButton"  Tag="V" Content="Voltage "/>
+                                <RadioButton GroupName="LogSenseMode" Name="LogCurrentRadioButton" Tag="I" Content="Current " IsChecked="True"/>
+                                <RadioButton GroupName="LogSenseMode" Name="LogDVMRadioButton" Tag="DVM" Content="DVM "/>
+                            </StackPanel>
+                        </Grid>
+                    </GroupBox>
+                    <GroupBox Header="Display">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <CheckBox Name="LoggerMinCheckBox" Content="Min" Grid.Row="0" IsChecked="True"/>
+                            <CheckBox Name="LoggerMeanCheckBox" Content="Mean" Grid.Row="1" IsChecked="True"/>
+                            <CheckBox Name="LoggerMaxCheckBox" Content="Max" Grid.Row="2" IsChecked="True"/>
+                            <CheckBox Name="LoggerRMSCheckBox" Content="RMS" Grid.Row="3"/>
+                        </Grid>
+                    </GroupBox>
+                    <StackPanel>
+                        <Button Name="LogButton" Content="Start Logging" Click="LogButton_Click" IsEnabled="False"/>
+                        <Button Name="StopLoggingButton" Content="Stop" Click="StopLoggingButton_Click" IsEnabled="False"/>
+                    </StackPanel>
+                </StackPanel>
+            </TabItem>
+        </TabControl>
         <WindowsFormsHost Name="ZedGraphHost"  Grid.Column="1" Margin="10">
             <zed:ZedGraphControl x:Name="zgc"
                                  Width="500"
