@@ -1,9 +1,13 @@
-﻿<Window x:Class="HP663xxCtrl.MainWindow"
+﻿<Window
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:zed="clr-namespace:ZedGraph;assembly=ZedGraph"
         xmlns:numericInput="http://gu.se/NumericInput"
+        xmlns:local="clr-namespace:HP663xxCtrl" x:Class="HP663xxCtrl.MainWindow"
         Title="HP663xx Control" Closing="Window_Closing" >
+    <Window.DataContext>
+        <local:MainWindowVm/>
+    </Window.DataContext>
     <Window.Resources>
         <Style TargetType="{x:Type Control}" x:Key="BoldFixed">
             <Setter Property="FontFamily" Value="Consolas" />
@@ -68,17 +72,15 @@
                         <RowDefinition Height="1*"/>
                         <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Name="Ch1VLabel"  Text="+0.--- V" Grid.Row="0" Grid.Column="0"  HorizontalAlignment="Center" Style="{StaticResource TB_BoldFixed}"/>
-                    <TextBlock Name="Ch1ILabel" Text="+0.---- A" Grid.Row="0" Grid.Column="1"  HorizontalAlignment="Center" Style="{StaticResource TB_BoldFixed}"/>
-                    <TextBlock Name="Ch1StatusLabel"  Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Style="{StaticResource TB_BoldFixed}" HorizontalAlignment="Center"  >
+                    <TextBlock x:Name="Ch1VLabel"  Text="+0.--- V" Grid.Row="0" Grid.Column="0"  HorizontalAlignment="Center" Style="{StaticResource TB_BoldFixed}"/>
+                    <TextBlock x:Name="Ch1ILabel" Text="+0.---- A" Grid.Row="0" Grid.Column="1"  HorizontalAlignment="Center" Style="{StaticResource TB_BoldFixed}"/>
+                    <TextBlock x:Name="Ch1StatusLabel"  Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Style="{StaticResource TB_BoldFixed}" HorizontalAlignment="Center"  >
                         <TextBlock.RenderTransform>
                             <ScaleTransform ScaleX="0.8" ScaleY="0.8" />
-                        </TextBlock.RenderTransform>
-                             OVP  OCP  CV  CC+
-                    </TextBlock>
+                        </TextBlock.RenderTransform><Run Text="OVP OCP CV CC+"/></TextBlock>
                 </Grid>
             </GroupBox>
-            <GroupBox Name="CH2ReadbackGroupBox" Header="Channel 2">
+            <GroupBox x:Name="CH2ReadbackGroupBox" Header="Channel 2">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*"/>
@@ -89,17 +91,15 @@
                         <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Name="Ch2VLabel"  Text="+0.--- V" Grid.Row="0" Grid.Column="0"  HorizontalAlignment="Center" Style="{StaticResource TB_BoldFixed}"/>
-                    <TextBlock Name="Ch2ILabel" Text="+0.---- A" Grid.Row="0" Grid.Column="1"  HorizontalAlignment="Center" Style="{StaticResource TB_BoldFixed}"/>
-                    <TextBlock Name="Ch2StatusLabel" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Style="{StaticResource TB_BoldFixed}" HorizontalAlignment="Center"  >
+                    <TextBlock x:Name="Ch2VLabel"  Text="+0.--- V" Grid.Row="0" Grid.Column="0"  HorizontalAlignment="Center" Style="{StaticResource TB_BoldFixed}"/>
+                    <TextBlock x:Name="Ch2ILabel" Text="+0.---- A" Grid.Row="0" Grid.Column="1"  HorizontalAlignment="Center" Style="{StaticResource TB_BoldFixed}"/>
+                    <TextBlock x:Name="Ch2StatusLabel" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Style="{StaticResource TB_BoldFixed}" HorizontalAlignment="Center"  >
                         <TextBlock.RenderTransform>
                             <ScaleTransform ScaleX="0.8" ScaleY="0.8" />
-                        </TextBlock.RenderTransform>
-                                  OCP  CV  CC
-                    </TextBlock>
+                        </TextBlock.RenderTransform><Run Text="OCP CV CC"/></TextBlock>
                 </Grid>
             </GroupBox>
-            <GroupBox Name="DVMGroupBox" Header="DVM">
+            <GroupBox x:Name="DVMGroupBox" Header="DVM">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*"/>
@@ -107,7 +107,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Name="DVMVLabel" Text="+0.--- V" Grid.Row="0" Grid.Column="0"  HorizontalAlignment="Center" Style="{StaticResource TB_BoldFixed}"/>
+                    <TextBlock x:Name="DVMVLabel" Text="+0.--- V" Grid.Row="0" Grid.Column="0"  HorizontalAlignment="Center" Style="{StaticResource TB_BoldFixed}"/>
                 </Grid>
             </GroupBox>
             <GroupBox Header="Program">
@@ -127,26 +127,26 @@
                         <RowDefinition Height="auto"/>
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="1: " />
-                    <TextBlock Name="CH2ProgramLabel" Grid.Row="2" Grid.Column="0" Text="2: " />
+                    <TextBlock x:Name="CH2ProgramLabel" Grid.Row="2" Grid.Column="0" Text="2: " />
                     <TextBlock Grid.Row="0" Grid.Column="1" Text="V" HorizontalAlignment="Center" />
                     <TextBlock Grid.Row="0" Grid.Column="2" Text="I" HorizontalAlignment="Center" />
-                    <numericInput:DoubleBox Name="CH1VTextBox" Grid.Row="1" Grid.Column="1" Text="0.0" MinValue="0.0"/>
-                    <numericInput:DoubleBox Name="CH1ITextBox" Grid.Row="1" Grid.Column="2" Text="0.001" MinValue="0.0"/>
-                    <numericInput:DoubleBox Name="CH2VTextBox" Grid.Row="2" Grid.Column="1" Text="0.0" MinValue="0.0"/>
-                    <numericInput:DoubleBox Name="CH2ITextBox" Grid.Row="2" Grid.Column="2" Text="0.001" MinValue="0.0"/>
+                    <numericInput:DoubleBox x:Name="CH1VTextBox" Grid.Row="1" Grid.Column="1" Text="0.0" MinValue="0.0"/>
+                    <numericInput:DoubleBox x:Name="CH1ITextBox" Grid.Row="1" Grid.Column="2" Text="0.001" MinValue="0.0"/>
+                    <numericInput:DoubleBox x:Name="CH2VTextBox" Grid.Row="2" Grid.Column="1" Text="0.0" MinValue="0.0"/>
+                    <numericInput:DoubleBox x:Name="CH2ITextBox" Grid.Row="2" Grid.Column="2" Text="0.001" MinValue="0.0"/>
                     <StackPanel Grid.Row="3" Grid.ColumnSpan="3" Orientation="Horizontal" >
-                        <CheckBox Name="EnableOutputCheckbox" Content="EN  " />
-                        <CheckBox Name="OCPCheckbox" Content="OCP" />
+                        <CheckBox x:Name="EnableOutputCheckbox" Content="EN  " />
+                        <CheckBox x:Name="OCPCheckbox" Content="OCP" />
                     </StackPanel>
                     <DockPanel Grid.Row="4" Grid.ColumnSpan="3" >
-                        <CheckBox DockPanel.Dock="Left" Name="OVPCheckbox" Content="OVP: " VerticalAlignment="Center" />
-                        <numericInput:DoubleBox Name="OVPLevelTextBox" Text="22" CanValueBeNull="True" MinValue="0" MaxValue="22" />
+                        <CheckBox DockPanel.Dock="Left" x:Name="OVPCheckbox" Content="OVP: " VerticalAlignment="Center" />
+                        <numericInput:DoubleBox x:Name="OVPLevelTextBox" Text="22" CanValueBeNull="True" MinValue="0" MaxValue="22" />
                     </DockPanel>
                     <DockPanel Grid.Row="5" Grid.ColumnSpan="3" HorizontalAlignment="Right">
-                        <Button DockPanel.Dock="Right" Name="ApplyProgramButton" Content="Apply" Click="ApplyProgramButton_Click" IsEnabled="False" />
+                        <Button DockPanel.Dock="Right" x:Name="ApplyProgramButton" Content="Apply" Click="ApplyProgramButton_Click" IsEnabled="False" />
                     </DockPanel>
                     <DockPanel Grid.Row="6" Grid.ColumnSpan="3" HorizontalAlignment="Right">
-                        <Button DockPanel.Dock="Right" Name="ClearProtectionButton" Content="Clear Prot." Click="ClearProtectionButton_Click"  IsEnabled="False"/>
+                        <Button DockPanel.Dock="Right" x:Name="ClearProtectionButton" Content="Clear Prot." Click="ClearProtectionButton_Click"  IsEnabled="False"/>
                     </DockPanel>
                 </Grid>
             </GroupBox>
@@ -165,20 +165,21 @@
                     <Label Grid.Row="0" Grid.Column="0"  Content="Current Range: " VerticalAlignment="Center"/>
                     <ComboBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"  AllowDrop="True" SelectedIndex="0" SelectionChanged="ComboBox_SelectionChanged">
                         <!--<ComboBoxItem Tag="AUTO">Auto</ComboBoxItem>-->
-                        <ComboBoxItem Tag="LOW">20 mA</ComboBoxItem>
-                        <ComboBoxItem Tag="HIGH">3 A</ComboBoxItem>
+                        <ComboBoxItem Tag="LOW" Content="20 mA"/>
+                        <ComboBoxItem Tag="HIGH" Content="3 A"/>
                     </ComboBox>
 
                     <Label Grid.Row="1" Grid.Column="0"  Content="Current Mode: " VerticalAlignment="Center"/>
                     <ComboBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"  AllowDrop="True" SelectedIndex="1">
-                        <ComboBoxItem Tag="IMMED">DC</ComboBoxItem><!-- high range only? -->
-                        <ComboBoxItem Tag="POS">ACDC</ComboBoxItem>
+                        <ComboBoxItem Tag="IMMED" Content="DC"/>
+                        <!-- high range only? -->
+                        <ComboBoxItem Tag="POS" Content="ACDC"/>
                     </ComboBox>
                 </Grid>
             </GroupBox>
         </StackPanel>
         <TabControl TabStripPlacement="Top" DockPanel.Dock="Top" >
-            <TabItem Name="AcquisitionTabItem" Header="Acquisition">
+            <TabItem x:Name="AcquisitionTabItem" Header="Acquisition">
                 <StackPanel Orientation="Horizontal">
                     <GroupBox Header="Acquisition" >
                         <Grid>
@@ -193,16 +194,16 @@
                                 <RowDefinition/>
                             </Grid.RowDefinitions>
                             <StackPanel Grid.ColumnSpan="3" Orientation="Horizontal">
-                                <RadioButton GroupName="AcqSenseMode" Name="AcqVoltageRadioButton"  Tag="V" Content="Voltage "/>
-                                <RadioButton GroupName="AcqSenseMode" Name="AcqCurrentRadioButton" Tag="I" Content="Current " IsChecked="True"/>
-                                <RadioButton GroupName="AcqSenseMode" Name="AcqDVMRadioButton" Tag="DVM" Content="DVM "/>
+                                <RadioButton GroupName="AcqSenseMode" x:Name="AcqVoltageRadioButton"  Tag="V" Content="Voltage "/>
+                                <RadioButton GroupName="AcqSenseMode" x:Name="AcqCurrentRadioButton" Tag="I" Content="Current " IsChecked="True"/>
+                                <RadioButton GroupName="AcqSenseMode" x:Name="AcqDVMRadioButton" Tag="DVM" Content="DVM "/>
                             </StackPanel>
                             <Label x:Name="DurationLabel" Grid.Row="1" Grid.Column="0" Content="Time (s): " VerticalAlignment="Center"/>
-                            <TextBox x:Name="DurationTextBox" Grid.Row="1" Grid.Column="1"  Text="1.0" VerticalAlignment="Center"/>
+                            <numericInput:DoubleBox x:Name="DurationTextBox" Grid.Row="1" Grid.Column="1"  Text="1.0" VerticalAlignment="Center" MinValue="0"/>
                             <Label x:Name="NumPointsLabel" Grid.Row="2" Grid.Column="0"  Content="Num Pts: " VerticalAlignment="Center"/>
-                            <TextBox x:Name="NumPtsTextBox" Grid.Row="2" Grid.Column="1" Text="1024" VerticalAlignment="Center" />
+                            <numericInput:IntBox x:Name="NumPtsTextBox" Grid.Row="2" Grid.Column="1" Text="1024" VerticalAlignment="Center" MinValue="1" MaxValue="4096"/>
                             <Label x:Name="NumSegmentsLabel" Grid.Row="3" Grid.Column="0"  Content="Segments: " VerticalAlignment="Center"/>
-                            <TextBox x:Name="NumSegmentsTextBox" Grid.Row="3" Grid.Column="1" Text="1" VerticalAlignment="Center" />
+                            <numericInput:IntBox x:Name="NumSegmentsTextBox" Grid.Row="3" Grid.Column="1" Value="{Binding AcqSegments}" VerticalAlignment="Center" MinValue="1" />
                         </Grid>
                     </GroupBox>
                     <GroupBox Header="Trigger">
@@ -218,30 +219,30 @@
                                 <RowDefinition/>
                                 <RowDefinition/>
                             </Grid.RowDefinitions>
-                            <ComboBox Name="TriggerComboBox" Grid.Row="0" Grid.ColumnSpan="3"  AllowDrop="True" SelectedIndex="0">
-                                <ComboBoxItem Tag="IMMED">Immediate</ComboBoxItem>
-                                <ComboBoxItem Tag="POS">Positive Slope</ComboBoxItem>
-                                <ComboBoxItem Tag="NEG">Negative Slope</ComboBoxItem>
-                                <ComboBoxItem Tag="EITHER">Either Slope</ComboBoxItem>
+                            <ComboBox x:Name="TriggerComboBox" Grid.Row="0" Grid.ColumnSpan="3"  AllowDrop="True" SelectedIndex="0">
+                                <ComboBoxItem Tag="IMMED" Content="Immediate"/>
+                                <ComboBoxItem Tag="POS" Content="Positive Slope"/>
+                                <ComboBoxItem Tag="NEG" Content="Negative Slope"/>
+                                <ComboBoxItem Tag="EITHER" Content="Either Slope"/>
                             </ComboBox>
                             <Label x:Name="TrigLevelLabel" Grid.Row="1" Grid.Column="0"  Content="Trigger Level: " VerticalAlignment="Center"/>
-                            <TextBox x:Name="TrigLevelTextBox"   Grid.Row="1" Grid.Column="1" Text="0.0" VerticalAlignment="Center" />
+                            <numericInput:DoubleBox x:Name="TrigLevelTextBox"   Grid.Row="1" Grid.Column="1" Value="{Binding TriggerLevel}" VerticalAlignment="Center" />
                             <TextBlock Text=" A/V"   Grid.Row="1" Grid.Column="2" VerticalAlignment="Center"/>
                             <Label Grid.Row="2" Grid.Column="0"  Content="Hysteresis: " VerticalAlignment="Center"/>
-                            <TextBox x:Name="Hysteresis"   Grid.Row="2" Grid.Column="1" Text="0.0" VerticalAlignment="Center" />
+                            <numericInput:DoubleBox x:Name="TrigHystTextBox"   Grid.Row="2" Grid.Column="1"  VerticalAlignment="Center"  MinValue="0" Value="{Binding TriggerHysteresis}"/>
                             <TextBlock Text=" A/V"   Grid.Row="2" Grid.Column="2" VerticalAlignment="Center"/>
                             <Label x:Name="SampleOffsetLabel" Grid.Row="3" Grid.Column="0"  Content="Sample Offset: " VerticalAlignment="Center"/>
-                            <numericInput:IntBox x:Name="SampleOffsetTextBox" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Text="0" VerticalAlignment="Center" MinValue="-2000" MaxValue="2000000000"/>
+                            <numericInput:IntBox x:Name="SampleOffsetTextBox" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Value="{Binding TriggerOffset}" VerticalAlignment="Center" MinValue="-2000" MaxValue="2000000000"/>
                         </Grid>
                     </GroupBox>
                     <StackPanel>
-                        <Button Name="AcquireButton" Content="Acquire" Click="AcquireButton_Click" IsEnabled="False"/>
-                        <Button Name="StopAcquireButton" Content="Stop" Click="StopAcquireButton_Click" IsEnabled="False"/>
+                        <Button x:Name="AcquireButton" Content="Acquire" Click="AcquireButton_Click" IsEnabled="False"/>
+                        <Button x:Name="StopAcquireButton" Content="Stop" Click="StopAcquireButton_Click" IsEnabled="False"/>
                     </StackPanel>
                 </StackPanel>
             </TabItem>
-            
-            <TabItem Name="LoggingTabItem" Header="Logging">
+
+            <TabItem x:Name="LoggingTabItem" Header="Logging">
                 <StackPanel Orientation="Horizontal">
                     <GroupBox Header="Acquisition" >
                         <Grid>
@@ -256,9 +257,9 @@
                                 <RowDefinition/>
                             </Grid.RowDefinitions>
                             <StackPanel Grid.ColumnSpan="3" Orientation="Horizontal">
-                                <RadioButton GroupName="LogSenseMode" Name="LogVoltageRadioButton"  Tag="V" Content="Voltage "/>
-                                <RadioButton GroupName="LogSenseMode" Name="LogCurrentRadioButton" Tag="I" Content="Current " IsChecked="True"/>
-                                <RadioButton GroupName="LogSenseMode" Name="LogDVMRadioButton" Tag="DVM" Content="DVM "/>
+                                <RadioButton GroupName="LogSenseMode" x:Name="LogVoltageRadioButton"  Tag="V" Content="Voltage "/>
+                                <RadioButton GroupName="LogSenseMode" x:Name="LogCurrentRadioButton" Tag="I" Content="Current " IsChecked="True"/>
+                                <RadioButton GroupName="LogSenseMode" x:Name="LogDVMRadioButton" Tag="DVM" Content="DVM "/>
                             </StackPanel>
                         </Grid>
                     </GroupBox>
@@ -273,23 +274,22 @@
                                 <RowDefinition/>
                                 <RowDefinition/>
                             </Grid.RowDefinitions>
-                            <CheckBox Name="LoggerMinCheckBox" Content="Min" Grid.Row="0" IsChecked="True"/>
-                            <CheckBox Name="LoggerMeanCheckBox" Content="Mean" Grid.Row="1" IsChecked="True"/>
-                            <CheckBox Name="LoggerMaxCheckBox" Content="Max" Grid.Row="2" IsChecked="True"/>
-                            <CheckBox Name="LoggerRMSCheckBox" Content="RMS" Grid.Row="3"/>
+                            <CheckBox x:Name="LoggerMinCheckBox" Content="Min" Grid.Row="0" IsChecked="True" Checked="LoggerCurveCheckBox_Checked"  Unchecked="LoggerCurveCheckBox_Checked"/>
+                            <CheckBox x:Name="LoggerMeanCheckBox" Content="Mean" Grid.Row="1" IsChecked="True" Checked="LoggerCurveCheckBox_Checked"  Unchecked="LoggerCurveCheckBox_Checked"/>
+                            <CheckBox x:Name="LoggerMaxCheckBox" Content="Max" Grid.Row="2" IsChecked="True" Checked="LoggerCurveCheckBox_Checked"  Unchecked="LoggerCurveCheckBox_Checked"/>
+                            <CheckBox x:Name="LoggerRMSCheckBox" Content="RMS" Grid.Row="3" Checked="LoggerCurveCheckBox_Checked" Unchecked="LoggerCurveCheckBox_Checked"/>
                         </Grid>
                     </GroupBox>
                     <StackPanel>
-                        <Button Name="LogButton" Content="Start Logging" Click="LogButton_Click" IsEnabled="False"/>
-                        <Button Name="StopLoggingButton" Content="Stop" Click="StopLoggingButton_Click" IsEnabled="False"/>
+                        <Button x:Name="LogButton" Content="Start Logging" Click="LogButton_Click" IsEnabled="False"/>
+                        <Button x:Name="StopLoggingButton" Content="Stop" Click="StopLoggingButton_Click" IsEnabled="False"/>
                     </StackPanel>
                 </StackPanel>
             </TabItem>
         </TabControl>
-        <WindowsFormsHost Name="ZedGraphHost"  Grid.Column="1" Margin="10">
+        <WindowsFormsHost x:Name="ZedGraphHost"  Grid.Column="1" Margin="10">
             <zed:ZedGraphControl x:Name="zgc"
-                                 Width="500"
-                                 Height="320" />
+                                 />
         </WindowsFormsHost>
     </DockPanel>
 </Window>

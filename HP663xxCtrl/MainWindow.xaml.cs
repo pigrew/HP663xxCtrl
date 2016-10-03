@@ -20,6 +20,9 @@ namespace HP663xxCtrl {
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window {
+
+        MainWindowVm VM;
+
         public MainWindow() {
             InitializeComponent();
             ZedGraphControl zgc = (ZedGraphControl)ZedGraphHost.Child;
@@ -37,6 +40,9 @@ namespace HP663xxCtrl {
 
             zgc.GraphPane.Title.IsVisible = false;
             zgc.GraphPane.XAxis.Title.Text = "Time (s)";
+
+            VM = new MainWindowVm();
+            this.DataContext = VM;
         }
 
         System.Drawing.Color[] CurveColors = new System.Drawing.Color[] {
@@ -219,17 +225,25 @@ namespace HP663xxCtrl {
                 }
             }
         }
+        bool ZedgraphLoggingMode = false;
         DateTime LogStartTime;
         void HandleLogDatapoint(object sender, HP663xx.LoggerDatapoint dp) {
-            zgc.GraphPane.CurveList[0].AddPoint(
-                dp.time.Subtract(LogStartTime).TotalSeconds,
-                dp.Min);
-            zgc.GraphPane.CurveList[1].AddPoint(
-                dp.time.Subtract(LogStartTime).TotalSeconds,
-                dp.Mean);
+            if(!double.IsNaN(dp.Min))
+                zgc.GraphPane.CurveList[0].AddPoint(
+                    dp.time.Subtract(LogStartTime).TotalSeconds,
+                    dp.Min);
+            if(!double.IsNaN(dp.Mean))
+                zgc.GraphPane.CurveList[1].AddPoint(
+                    dp.time.Subtract(LogStartTime).TotalSeconds,
+                    dp.Mean);
+            if(!double.IsNaN(dp.Max))
             zgc.GraphPane.CurveList[2].AddPoint(
                 dp.time.Subtract(LogStartTime).TotalSeconds,
                 dp.Max);
+            if(!double.IsNaN(dp.RMS))
+                zgc.GraphPane.CurveList[3].AddPoint(
+                    dp.time.Subtract(LogStartTime).TotalSeconds,
+                    dp.RMS);
             zgc.AxisChange();
             zgc.Invalidate();
         }
@@ -246,6 +260,13 @@ namespace HP663xxCtrl {
                 zgc.GraphPane.AddCurve("Min", new double[0], new double[0], System.Drawing.Color.Blue);
                 zgc.GraphPane.AddCurve("Mean", new double[0], new double[0], System.Drawing.Color.Black);
                 zgc.GraphPane.AddCurve("Max", new double[0], new double[0], System.Drawing.Color.Red);
+                zgc.GraphPane.AddCurve("RMS", new double[0], new double[0], System.Drawing.Color.Red);
+
+                zgc.GraphPane.CurveList[0].IsVisible = LoggerMinCheckBox.IsChecked.Value;
+                zgc.GraphPane.CurveList[1].IsVisible = LoggerMeanCheckBox.IsChecked.Value;
+                zgc.GraphPane.CurveList[2].IsVisible = LoggerMaxCheckBox.IsChecked.Value;
+                zgc.GraphPane.CurveList[3].IsVisible = LoggerRMSCheckBox.IsChecked.Value;
+                ZedgraphLoggingMode = true;
 
                 HP663xx.SenseModeEnum mode;
                 if (LogVoltageRadioButton.IsChecked.Value) {
@@ -266,9 +287,11 @@ namespace HP663xxCtrl {
             StopLoggingButton.IsEnabled = false;
             InstWorker.StopAcquireRequested = true;
         }
+
         private void AcquireButton_Click(object sender, RoutedEventArgs e) {
 
             if (InstWorker != null) {
+                var blah = GetTreeErrors(AcquisitionTabItem);
                 InstWorker.StopAcquireRequested = false;
                 AcquireButton.IsEnabled = false;
                 ApplyProgramButton.IsEnabled = false;
@@ -276,13 +299,15 @@ namespace HP663xxCtrl {
                 StopAcquireButton.IsEnabled = true;
                 LogButton.IsEnabled = false;
                 zgc.GraphPane.CurveList.Clear();
-            
+                ZedgraphLoggingMode = false;
+
                 InstrumentWorker.AcquireDetails details = new InstrumentWorker.AcquireDetails();
                 details.NumPoints = int.Parse(NumPtsTextBox.Text);
                 double duration = double.Parse(DurationTextBox.Text.Trim());
                 details.Interval = duration / details.NumPoints;
-                details.Level = double.Parse(TrigLevelTextBox.Text);
-                details.SampleOffset = int.Parse(SampleOffsetTextBox.Text);
+                details.Level = VM.TriggerLevel;
+                details.SampleOffset = VM.TriggerOffset;
+                details.TriggerHysteresis = VM.TriggerHysteresis;
                 if (AcqVoltageRadioButton.IsChecked.Value) {
                     details.SenseMode = HP663xx.SenseModeEnum.VOLTAGE;
                     zgc.GraphPane.YAxis.Title.Text = "Voltage (V)";
@@ -294,7 +319,7 @@ namespace HP663xxCtrl {
                     zgc.GraphPane.YAxis.Title.Text = "Voltage (V)";
                 }
 
-                details.SegmentCount = int.Parse(NumSegmentsTextBox.Text);
+                details.SegmentCount = VM.AcqSegments;
 
                 switch ((string)((ComboBoxItem)TriggerComboBox.SelectedItem).Tag) {
                     case "IMMED": details.triggerEdge = HP663xx.TriggerSlopeEnum.Immediate; break;
@@ -364,5 +389,27 @@ namespace HP663xxCtrl {
             InstWorker.RequestClearProtection();
         }
 
+        private void LoggerCurveCheckBox_Checked(object sender, RoutedEventArgs e) {
+            if (ZedgraphLoggingMode) {
+                zgc.GraphPane.CurveList[0].IsVisible = LoggerMinCheckBox.IsChecked.Value;
+                zgc.GraphPane.CurveList[1].IsVisible = LoggerMeanCheckBox.IsChecked.Value;
+                zgc.GraphPane.CurveList[2].IsVisible = LoggerMaxCheckBox.IsChecked.Value;
+                zgc.GraphPane.CurveList[3].IsVisible = LoggerRMSCheckBox.IsChecked.Value;
+                zgc.Invalidate();
+            }
+
+        }
+        // From http://stackoverflow.com/questions/127477/detecting-wpf-validation-errors
+        private List<ValidationError> GetTreeErrors(DependencyObject obj, bool childrenOnly=false) {
+            // The dependency object is valid if it has no errors and all
+            // of its children (that are dependency objects) are error-free.
+            List<ValidationError> errors = new List<ValidationError>();
+            errors.AddRange(Validation.GetErrors(obj));
+
+            errors.AddRange(LogicalTreeHelper.GetChildren(obj)
+            .OfType<DependencyObject>()
+            .SelectMany(x => GetTreeErrors(x)));
+            return errors;
+        }
     }
 }

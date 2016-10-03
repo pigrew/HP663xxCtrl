@@ -40,6 +40,7 @@ namespace HP663xxCtrl {
             public double Interval;
             public HP663xx.SenseModeEnum SenseMode;
             public double Level;
+            public double TriggerHysteresis;
             public HP663xx.TriggerSlopeEnum triggerEdge;
             public int SegmentCount;
             public int SampleOffset;
@@ -126,12 +127,15 @@ namespace HP663xxCtrl {
                     interval: arg.Interval,
                     triggerEdge: arg.triggerEdge,
                     level: arg.Level,
+                    hysteresis: arg.TriggerHysteresis,
                     triggerCount: count,
                     triggerOffset: arg.SampleOffset);
+
                 while (!dev.IsMeasurementFinished() && !StopAcquireRequested
                     && !StopRequested) {
                     System.Threading.Thread.Sleep(70);
                 }
+
                 if (StopAcquireRequested || StopRequested) {
                     dev.AbortMeasurement();
                     if (StateChanged != null) StateChanged(this, StateEnum.Connected);

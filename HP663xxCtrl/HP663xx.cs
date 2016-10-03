@@ -283,6 +283,7 @@ namespace HP663xxCtrl
             int numPoints = 4096,
             double interval = 15.6e-6,
             double level = double.NaN,
+            double hysteresis = 0.0,
             int triggerCount = 1,
             TriggerSlopeEnum triggerEdge = TriggerSlopeEnum.Positive,
             int triggerOffset = 0
@@ -327,7 +328,8 @@ namespace HP663xxCtrl
                 }
                 dev.WriteString("TRIG:ACQ:COUNT:" + modeString + " " + triggerCount.ToString() + ";" +
                     ":TRIG:ACQ:LEVEL:" + modeString + " " + level.ToString() + ";" +
-                    ":TRIG:ACQ:SLOPE:" + modeString + " " + slopeStr + ";");
+                    ":TRIG:ACQ:SLOPE:" + modeString + " " + slopeStr + ";" +
+                    ":TRIG:ACQ:HYST:" + modeString + " " + hysteresis.ToString());
                 dev.WriteString("TRIG:ACQ:SOURCE INT");
                 dev.WriteString("ABORT;*WAI");
                 dev.WriteString("INIT:NAME ACQ");
