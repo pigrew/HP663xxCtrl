@@ -163,7 +163,7 @@
                         <RowDefinition/>
                     </Grid.RowDefinitions>
                     <Label Grid.Row="0" Grid.Column="0"  Content="Current Range: " VerticalAlignment="Center"/>
-                    <ComboBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"  AllowDrop="True" SelectedIndex="0" SelectionChanged="ComboBox_SelectionChanged">
+                    <ComboBox Name="CurrentRangeComboBox" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"  AllowDrop="True" SelectedIndex="0" SelectionChanged="ComboBox_SelectionChanged">
                         <!--<ComboBoxItem Tag="AUTO">Auto</ComboBoxItem>-->
                         <ComboBoxItem Tag="LOW" Content="20 mA"/>
                         <ComboBoxItem Tag="HIGH" Content="3 A"/>

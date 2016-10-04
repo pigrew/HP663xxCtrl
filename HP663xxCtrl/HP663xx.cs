@@ -25,12 +25,14 @@ namespace HP663xxCtrl
         }
         public enum CurrentRanges {
             TWENTY_mA,
+            MEDIUM,
             HIGH
         };
         public void SetCurrentRange(CurrentRanges range) {
             switch (range)
             {
                 case CurrentRanges.TWENTY_mA: dev.WriteString("SENS:CURR:RANG MIN"); break;
+                case CurrentRanges.MEDIUM: dev.WriteString("SENS:CURR:RANG 0.9"); break;
                 case CurrentRanges.HIGH: dev.WriteString("SENS:CURR:RANG MAX"); break;
             }
         }
@@ -90,9 +92,12 @@ namespace HP663xxCtrl
             public bool OVP;
             public double OVPVal;
             public double V1, I1, V2, I2;
+
+            // And other things that are not actually used during programming
             public bool HasDVM, HasOutput2;
             public string ID;
             public double MaxV1, MaxI1, MaxV2, MaxI2;
+            public CurrentRanges Range;
         }
         public ProgramDetails ReadProgramDetails() {
 
@@ -123,6 +128,13 @@ namespace HP663xxCtrl
                 details.MaxI2 = double.Parse(parts[0]);
 
             }
+            double range = Double.Parse(Query(":sense:curr:range?").Trim());
+            if (range < 0.03)
+                details.Range = CurrentRanges.TWENTY_mA;
+            else if (range < 1.1)
+                details.Range = CurrentRanges.MEDIUM;
+            else
+                details.Range = CurrentRanges.HIGH;
             return details;
         }
         public InstrumentState ReadState(bool measureCh2=true, bool measureDVM=true) {
@@ -471,17 +483,21 @@ namespace HP663xxCtrl
         }
         public void Close(bool goToLocal = true)
         {
-            if (dev != null && dev.IO != null) {
+            if (dev != null ) {
                 if (goToLocal) {
                     IGpib gpibdev = dev.IO as IGpib;
                     if (gpibdev != null)
                         gpibdev.ControlREN(RENControlConst.GPIB_REN_GTL);
                 }
                 dev.IO.Close();
-                dev.IO = null;
-            }
-            if (dev != null)
+                try {
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(dev);
+                } catch { }
                 dev = null;
+            }
+            try {
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(rm);
+            } catch { }
         }
     }
 }

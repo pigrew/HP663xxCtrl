@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -127,11 +128,13 @@ namespace HP663xxCtrl {
             InstWorker.RequestShutdown();
         }
         private void UpdateStateLabels(object sender, HP663xx.InstrumentState state) {
-            Ch1VLabel.Text = state.V.ToString("#0.000") + " V";
+            NumberFormatInfo nfi = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
+            nfi.NumberNegativePattern = 1;
+            Ch1VLabel.Text = state.V.ToString("N3",nfi).PadLeft(7) + " V";
             if (state.IRange > 1.1) {
-                Ch1ILabel.Text = state.I.ToString("0.0000") + "  A";
+                Ch1ILabel.Text = state.I.ToString("N4", nfi).PadLeft(7) + "  A";
             } else {
-                Ch1ILabel.Text = (state.I * 1000).ToString("#0.000") + " mA";
+                Ch1ILabel.Text = (state.I * 1000).ToString("N3",nfi).PadLeft(6) + " mA";
             }
             Ch1StatusLabel.Text =
                  ((state.Flags.Questionable.HasFlag(HP663xx.QuestionableStatusEnum.Unregulated)) ? "UNR" : "  ") +
@@ -148,8 +151,8 @@ namespace HP663xxCtrl {
                     )
                 );
             if (!double.IsNaN(state.V2)) {
-                Ch2VLabel.Text = state.V2.ToString("#0.###") + " V";
-                Ch2ILabel.Text = state.I2.ToString("0.0000") + "  A"; // Always in amps
+                Ch2VLabel.Text = state.V2.ToString("N3", nfi).PadLeft(7) + " V";
+                Ch2ILabel.Text = state.I2.ToString("N4", nfi).PadLeft(6) + "  A"; // Always in amps
             } else {
                 Ch2VLabel.Text = "--.---" + " -";
                 Ch2ILabel.Text = "--.----" + "  -";
@@ -165,7 +168,7 @@ namespace HP663xxCtrl {
                 " " +
                 (state.Flags.Operation.HasFlag(HP663xx.OperationStatusEnum.CC2) ? "CC " : "   ");
 
-            DVMVLabel.Text = state.DVM.ToString("#0.###");
+            DVMVLabel.Text = state.DVM.ToString("N3",nfi);
         }
         private void HandleDataAcquired(object sender, HP663xx.MeasArray result) {
 
@@ -213,6 +216,10 @@ namespace HP663xxCtrl {
             if (details.HasOutput2) {
                 CH2VTextBox.MaxValue = details.MaxV2;
                 CH2ITextBox.MaxValue = details.MaxI2;
+            }
+            switch (details.Range) {
+                case HP663xx.CurrentRanges.TWENTY_mA: CurrentRangeComboBox.SelectedIndex = 0; break;
+                default: CurrentRangeComboBox.SelectedIndex = 1; break;
             }
         }
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
