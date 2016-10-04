@@ -170,10 +170,10 @@
                     </ComboBox>
 
                     <Label Grid.Row="1" Grid.Column="0"  Content="Current Mode: " VerticalAlignment="Center"/>
-                    <ComboBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"  AllowDrop="True" SelectedIndex="1">
-                        <ComboBoxItem Tag="IMMED" Content="DC"/>
+                    <ComboBox Name="ACDCDetectorComboBox"  Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"  AllowDrop="True" SelectedIndex="1" SelectionChanged="ACDCDetectorComboBox_SelectionChanged">
+                        <ComboBoxItem Tag="DC" Content="DC"/>
                         <!-- high range only? -->
-                        <ComboBoxItem Tag="POS" Content="ACDC"/>
+                        <ComboBoxItem Tag="ACDC" Content="ACDC"/>
                     </ComboBox>
                 </Grid>
             </GroupBox>

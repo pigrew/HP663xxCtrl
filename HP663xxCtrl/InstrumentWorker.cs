@@ -29,7 +29,8 @@ namespace HP663xxCtrl {
             Acquire,
             Program,
             ClearProtection,
-            Log
+            Log,
+            SetACDCDetector
         }
         struct Command {
             public CommandEnum cmd;
@@ -89,6 +90,8 @@ namespace HP663xxCtrl {
                         case CommandEnum.ClearProtection:
                             DoClearProtection();
                             break;
+                        case CommandEnum.SetACDCDetector:
+                            DoACDCDetector((HP663xx.CurrentDetectorEnum)cmd.arg);break;
                         default:
                             throw new Exception("Unhandled command in InstrumentWorker");
                     }
@@ -215,6 +218,15 @@ namespace HP663xxCtrl {
         }
         public void RequestShutdown() {
             StopRequested = true;
+        }
+        void DoACDCDetector(HP663xx.CurrentDetectorEnum detector) {
+            dev.SetCurrentDetector(detector);
+        }
+        public void RequestACDCDetector(HP663xx.CurrentDetectorEnum detector) {
+            EventQueue.Add(new Command() {
+                cmd = CommandEnum.SetACDCDetector,
+                arg = detector
+            });
         }
     }
 }

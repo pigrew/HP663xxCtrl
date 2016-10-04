@@ -221,6 +221,10 @@ namespace HP663xxCtrl {
                 case HP663xx.CurrentRanges.TWENTY_mA: CurrentRangeComboBox.SelectedIndex = 0; break;
                 default: CurrentRangeComboBox.SelectedIndex = 1; break;
             }
+            switch (details.Detector) {
+                case HP663xx.CurrentDetectorEnum.DC: ACDCDetectorComboBox.SelectedIndex = 0; break;
+                case HP663xx.CurrentDetectorEnum.ACDC: ACDCDetectorComboBox.SelectedIndex = 1; break;
+            }
         }
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
             if (InstWorker != null) {
@@ -420,6 +424,16 @@ namespace HP663xxCtrl {
             .OfType<DependencyObject>()
             .SelectMany(x => GetTreeErrors(x)));
             return errors;
+        }
+
+        private void ACDCDetectorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+            if (InstWorker != null) {
+                switch ((string)((ComboBoxItem)e.AddedItems[0]).Tag) {
+                    case "DC": InstWorker.RequestACDCDetector(HP663xx.CurrentDetectorEnum.DC); break;
+                    case "ACDC": InstWorker.RequestACDCDetector(HP663xx.CurrentDetectorEnum.ACDC); break;
+                }
+
+            }
         }
     }
 }

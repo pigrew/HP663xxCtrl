@@ -70,6 +70,10 @@ namespace HP663xxCtrl
             MasterStatusSummary = 64,
             OperationStatusSummary = 128
         }
+        public enum CurrentDetectorEnum {
+            DC,
+            ACDC
+        }
         public struct StatusFlags
         {
             public QuestionableStatusEnum Questionable;
@@ -98,6 +102,7 @@ namespace HP663xxCtrl
             public string ID;
             public double MaxV1, MaxI1, MaxV2, MaxI2;
             public CurrentRanges Range;
+            public CurrentDetectorEnum Detector;
         }
         public ProgramDetails ReadProgramDetails() {
 
@@ -135,6 +140,13 @@ namespace HP663xxCtrl
                 details.Range = CurrentRanges.MEDIUM;
             else
                 details.Range = CurrentRanges.HIGH;
+
+            string detector = Query("SENSE:CURR:DET?").Trim();
+            switch (detector) {
+                case "DC": details.Detector = CurrentDetectorEnum.DC; break;
+                case "ACDC": details.Detector = CurrentDetectorEnum.ACDC; break;
+                default: throw new Exception();
+            }
             return details;
         }
         public InstrumentState ReadState(bool measureCh2=true, bool measureDVM=true) {
@@ -460,11 +472,15 @@ namespace HP663xxCtrl
             ClearErrors();
             dev.WriteString("FORMAT REAL");
             dev.WriteString("FORMat:BORDer NORMAL");
-            // Detector only applies to the HIGH current range
-            dev.WriteString("SENSe:CURRent:DETector ACDC");
             // Enable the detection of open sense leads
             dev.WriteString("SENSe:PROTection:STAT ON");
             
+        }
+        public void SetCurrentDetector(CurrentDetectorEnum detector) {
+            switch (detector) {
+                case CurrentDetectorEnum.ACDC: dev.WriteString("SENSe:CURRent:DETector ACDC"); break;
+                case CurrentDetectorEnum.DC: dev.WriteString("SENSe:CURRent:DETector DC"); break;
+            }
         }
         public enum OutputCompensationEnum {
             HighCap,
