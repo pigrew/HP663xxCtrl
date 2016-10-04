@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,6 +10,8 @@ namespace HP663xxCtrl
 {
     public class HP663xx
     {
+        CultureInfo CI = System.Globalization.CultureInfo.InvariantCulture;
+
         ResourceManager rm = new ResourceManager();
         FormattedIO488 dev = new FormattedIO488();
         public bool HasDVM { get; private set; }
@@ -112,28 +115,28 @@ namespace HP663xxCtrl
             string[] parts = response.Split(new char[] { ';' });
             ProgramDetails details = new ProgramDetails() {
                 Enabled = (parts[0] == "1"),
-                V1 = double.Parse(parts[1]),
-                I1 = double.Parse(parts[2]),
+                V1 = double.Parse(parts[1],CI),
+                I1 = double.Parse(parts[2],CI),
                 OVP = (parts[3] == "1"),
-                OVPVal = double.Parse(parts[4]),
+                OVPVal = double.Parse(parts[4],CI),
                 OCP = (parts[5] == "1"),
-                V2 = HasOutput2? double.Parse(parts[6]):double.NaN,
-                I2 = HasOutput2 ? double.Parse(parts[7]) : double.NaN,
+                V2 = HasOutput2? double.Parse(parts[6],CI):double.NaN,
+                I2 = HasOutput2 ? double.Parse(parts[7],CI) : double.NaN,
                 HasDVM = HasDVM,
                 HasOutput2 = HasOutput2,
                 ID = ID
             };
             // Maximums
             parts = Query("VOLT? MAX; CURR? MAX").Trim().Split(new char[] {';'});
-            details.MaxV1 = double.Parse(parts[0]);
-            details.MaxI1 = double.Parse(parts[0]);
+            details.MaxV1 = double.Parse(parts[0],CI);
+            details.MaxI1 = double.Parse(parts[0],CI);
             if (HasOutput2) {
                 parts = Query("VOLT2? MAX; CURR2? MAX").Trim().Split(new char[] { ';' });
-                details.MaxV2 = double.Parse(parts[0]);
-                details.MaxI2 = double.Parse(parts[0]);
+                details.MaxV2 = double.Parse(parts[0],CI);
+                details.MaxI2 = double.Parse(parts[0],CI);
 
             }
-            double range = Double.Parse(Query(":sense:curr:range?").Trim());
+            double range = Double.Parse(Query(":sense:curr:range?").Trim(),CI);
             if (range < 0.03)
                 details.Range = CurrentRanges.TWENTY_mA;
             else if (range < 1.1)
@@ -157,9 +160,9 @@ namespace HP663xxCtrl
                 ":OUTP1?;VOLTage:PROTection:STAT?;:CURR:PROT:STAT?").Trim();
             string[] statuses = statusStr.Split(new char[] { ';' });
             ret.Flags = new StatusFlags();
-            ret.Flags.Operation = (OperationStatusEnum)int.Parse(statuses[0]);
-            ret.Flags.Questionable = (QuestionableStatusEnum)int.Parse(statuses[1]);
-            ret.IRange = double.Parse(statuses[2]);
+            ret.Flags.Operation = (OperationStatusEnum)int.Parse(statuses[0],CI);
+            ret.Flags.Questionable = (QuestionableStatusEnum)int.Parse(statuses[1],CI);
+            ret.IRange = double.Parse(statuses[2],CI);
             ret.OutputEnabled = statuses[3] == "1";
             ret.OVP = statuses[4] == "1";
             ret.OCP = statuses[5] == "1";
@@ -177,12 +180,12 @@ namespace HP663xxCtrl
             dev.WriteString("SENS:SWE:POIN 2048; TINT 46.8e-6");
             dev.WriteString("SENS:SWE:OFFS:POIN 0;:SENS:WIND HANN");
             // Channel is about 30 ms
-            ret.V = Double.Parse(Query("MEAS:VOLT?"));
-            ret.I = Double.Parse(Query("MEAS:CURR?"));
+            ret.V = Double.Parse(Query("MEAS:VOLT?"),CI);
+            ret.I = Double.Parse(Query("MEAS:CURR?"),CI);
             // Ch2 is about 100 ms
             if (measureCh2 && HasOutput2) {
-                ret.V2 = Double.Parse(Query("MEAS:VOLT2?"));
-                ret.I2 = Double.Parse(Query("MEAS:CURR2?")); // Fixed at 2048*(15.6us)
+                ret.V2 = Double.Parse(Query("MEAS:VOLT2?"),CI);
+                ret.I2 = Double.Parse(Query("MEAS:CURR2?"),CI); // Fixed at 2048*(15.6us)
             } else {
                 ret.V2 = double.NaN;
                 ret.I2 = double.NaN;
@@ -190,7 +193,7 @@ namespace HP663xxCtrl
 
             // RMS is also available using MEAS:DVM:ACDC
             if(measureDVM && HasDVM)
-                ret.DVM = Double.Parse(Query("MEAS:DVM?")); // 2048*(15.6us) => 50 ms
+                ret.DVM = Double.Parse(Query("MEAS:DVM?"),CI); // 2048*(15.6us) => 50 ms
             else
                 ret.DVM = Double.NaN;
             ret.duration = DateTime.Now.Subtract(start).TotalMilliseconds;
@@ -200,18 +203,18 @@ namespace HP663xxCtrl
         {
             StatusFlags flags = new StatusFlags();
             string val = Query("stat:oper:cond?;:stat:ques:cond?");
-            int[] statuses = val.Split(new char[] { ';' }).Select(x => int.Parse(x)).ToArray();
+            int[] statuses = val.Split(new char[] { ';' }).Select(x => int.Parse(x,CI)).ToArray();
             flags.Operation = (OperationStatusEnum)statuses[0];
             flags.Questionable = (QuestionableStatusEnum)statuses[1];
             return flags;
         }
         public OperationStatusEnum GetOperationStatus()
         {
-            return (OperationStatusEnum)int.Parse(Query("STAT:OPER:COND?"));
+            return (OperationStatusEnum)int.Parse(Query("STAT:OPER:COND?"),CI);
         }
         public QuestionableStatusEnum GetQuestionableStatus()
         {
-            return (QuestionableStatusEnum)int.Parse(Query("STAT:QUES:COND?"));
+            return (QuestionableStatusEnum)int.Parse(Query("STAT:QUES:COND?"),CI);
         }
         public enum SenseModeEnum {
             CURRENT,
@@ -259,9 +262,9 @@ namespace HP663xxCtrl
             }
             // Immediate always has a trigger count of 1
             dev.WriteString("SENSe:FUNCtion \"" + modeString + "\"");
-            dev.WriteString("SENSe:SWEEP:POINTS " + numPoints.ToString() + "; " +
-                "TINTerval " + interval.ToString() + ";" +
-                "OFFSET:POINTS " + triggerOffset.ToString());
+            dev.WriteString("SENSe:SWEEP:POINTS " + numPoints.ToString(CI) + "; " +
+                "TINTerval " + interval.ToString(CI) + ";" +
+                "OFFSET:POINTS " + triggerOffset.ToString(CI));
             dev.WriteString("TRIG:ACQ:SOURCE BUS");
             dev.WriteString("ABORT;*WAI");
             //dev.WriteString("INIT:NAME ACQ;:TRIG:ACQ");
@@ -280,23 +283,23 @@ namespace HP663xxCtrl
                 case SenseModeEnum.CURRENT:
                     rsp = Query("MEAS:CURR?;:FETCH:CURR:MIN?;MAX?;ACDC?").Trim();
                     parts = rsp.Split(new char[] { ';' });
-                    ret.Mean = double.Parse(parts[0]);
-                    ret.Min = double.Parse(parts[1]);
-                    ret.Max = double.Parse(parts[2]);
-                    ret.RMS = double.Parse(parts[3]);
+                    ret.Mean = double.Parse(parts[0], CI);
+                    ret.Min = double.Parse(parts[1], CI);
+                    ret.Max = double.Parse(parts[2], CI);
+                    ret.RMS = double.Parse(parts[3], CI);
                     break;
                 case SenseModeEnum.VOLTAGE:
                     rsp = Query("MEAS:VOLT?;:FETCH:VOLT:MIN?;MAX?;ACDC?").Trim();
                     parts = rsp.Split(new char[] { ';' });
-                    ret.Mean = double.Parse(parts[0]);
-                    ret.Min = double.Parse(parts[1]);
-                    ret.Max = double.Parse(parts[2]);
-                    ret.RMS = double.Parse(parts[3]);
+                    ret.Mean = double.Parse(parts[0], CI);
+                    ret.Min = double.Parse(parts[1], CI);
+                    ret.Max = double.Parse(parts[2],CI);
+                    ret.RMS = double.Parse(parts[3],CI);
                     break;
                 case SenseModeEnum.DVM:
                     rsp = Query("MEAS:DVM?").Trim();
                     parts = rsp.Split(new char[] { ';' });
-                    ret.Mean = double.Parse(parts[0]);
+                    ret.Mean = double.Parse(parts[0], CI);
                     break;
             }
             ret.time = DateTime.Now;
@@ -336,9 +339,9 @@ namespace HP663xxCtrl
                 interval = 15.6e-6;
             if (interval > 1e4)
                 interval = 1e4;
-            dev.WriteString("SENSe:SWEEP:POINTS " + numPoints.ToString() + "; " +
-                "TINTerval " + interval.ToString() + ";" +
-                "OFFSET:POINTS " + triggerOffset.ToString());
+            dev.WriteString("SENSe:SWEEP:POINTS " + numPoints.ToString(CI) + "; " +
+                "TINTerval " + interval.ToString(CI) + ";" +
+                "OFFSET:POINTS " + triggerOffset.ToString(CI));
             if(triggerEdge== TriggerSlopeEnum.Immediate || double.IsNaN(level)) {
                 dev.WriteString("TRIG:ACQ:SOURCE BUS");
                 dev.WriteString("ABORT;*WAI");
@@ -350,10 +353,10 @@ namespace HP663xxCtrl
                     case TriggerSlopeEnum.Positive: slopeStr = "POS"; break;
                     case TriggerSlopeEnum.Negative: slopeStr = "NEG"; break;
                 }
-                dev.WriteString("TRIG:ACQ:COUNT:" + modeString + " " + triggerCount.ToString() + ";" +
-                    ":TRIG:ACQ:LEVEL:" + modeString + " " + level.ToString() + ";" +
+                dev.WriteString("TRIG:ACQ:COUNT:" + modeString + " " + triggerCount.ToString(CI) + ";" +
+                    ":TRIG:ACQ:LEVEL:" + modeString + " " + level.ToString(CI) + ";" +
                     ":TRIG:ACQ:SLOPE:" + modeString + " " + slopeStr + ";" +
-                    ":TRIG:ACQ:HYST:" + modeString + " " + hysteresis.ToString());
+                    ":TRIG:ACQ:HYST:" + modeString + " " + hysteresis.ToString(CI));
                 dev.WriteString("TRIG:ACQ:SOURCE INT");
                 dev.WriteString("ABORT;*WAI");
                 dev.WriteString("INIT:NAME ACQ");
@@ -363,7 +366,7 @@ namespace HP663xxCtrl
             dev.WriteString("*OPC");
         }
         public bool IsMeasurementFinished() {
-            return (((int.Parse(Query("*ESR?").Trim()) & 1) == 1));
+            return (((int.Parse(Query("*ESR?").Trim(), CI) & 1) == 1));
         }
         public void AbortMeasurement() {
             Query("ABORT;*OPC?");
@@ -396,7 +399,7 @@ namespace HP663xxCtrl
 
             }
             // Might be rounded, so return the actual value, not the requested value
-            res.TimeInterval = double.Parse(Query("SENSE:SWEEP:TINT?"));
+            res.TimeInterval = double.Parse(Query("SENSE:SWEEP:TINT?"),CI);
             return res;
         }
         public void ClearProtection() {
@@ -407,19 +410,19 @@ namespace HP663xxCtrl
             dev.WriteString("OUTPUT  " + (enabled?"ON":"OFF"));
         }
         public void SetIV(int channel, double voltage, double current) {
-            dev.WriteString("VOLT" + 
-                (channel==2?"2 ":" ") + voltage.ToString() +
-                ";:CURR" + 
-                (channel==2?"2 ":" ") + current.ToString() 
+            dev.WriteString("VOLT" +
+                (channel == 2 ? "2 " : " ") + voltage.ToString(CI) +
+                ";:CURR" +
+                (channel == 2 ? "2 " : " ") + current.ToString(CI) 
                 );
         }
         public void SetVoltage(double voltage)
         {
-            dev.WriteString("VOLT " + voltage.ToString());
+            dev.WriteString("VOLT " + voltage.ToString(CI));
         }
         public void SetCurrent(double current)
         {
-            dev.WriteString("CURRENT " + current.ToString());
+            dev.WriteString("CURRENT " + current.ToString(CI));
         }
         /// <summary>
         /// Set to Double.NaN to disable OVP
@@ -429,7 +432,7 @@ namespace HP663xxCtrl
             if (double.IsNaN(ovp))
                 dev.WriteString("VOLTage:PROTection:STATe OFF");
             else {
-                dev.WriteString("VOLTAGE:PROTECTION " + ovp.ToString());
+                dev.WriteString("VOLTAGE:PROTECTION " + ovp.ToString(CI));
                 dev.WriteString("VOLTage:PROTection:STATe ON");
             }
         }
@@ -440,7 +443,7 @@ namespace HP663xxCtrl
         // People _probably_ won't depend on it....
         void EnsurePSCOne()
         {
-            int psc = int.Parse(Query("*PSC?"));
+            int psc = int.Parse(Query("*PSC?"), CI);
             if (psc == 0)
                 dev.WriteString("*PSC 1"); ;
         }
