@@ -130,17 +130,17 @@
                     <TextBlock x:Name="CH2ProgramLabel" Grid.Row="2" Grid.Column="0" Text="2: " />
                     <TextBlock Grid.Row="0" Grid.Column="1" Text="V" HorizontalAlignment="Center" />
                     <TextBlock Grid.Row="0" Grid.Column="2" Text="I" HorizontalAlignment="Center" />
-                    <numericInput:DoubleBox x:Name="CH1VTextBox" Grid.Row="1" Grid.Column="1" Text="0.0" MinValue="0.0"/>
-                    <numericInput:DoubleBox x:Name="CH1ITextBox" Grid.Row="1" Grid.Column="2" Text="0.001" MinValue="0.0"/>
-                    <numericInput:DoubleBox x:Name="CH2VTextBox" Grid.Row="2" Grid.Column="1" Text="0.0" MinValue="0.0"/>
-                    <numericInput:DoubleBox x:Name="CH2ITextBox" Grid.Row="2" Grid.Column="2" Text="0.001" MinValue="0.0"/>
+                    <numericInput:DoubleBox x:Name="CH1VTextBox" Grid.Row="1" Grid.Column="1" MinValue="0.0" Value="{Binding V1}"/>
+                    <numericInput:DoubleBox x:Name="CH1ITextBox" Grid.Row="1" Grid.Column="2" MinValue="0.0" Value="{Binding I1}"/>
+                    <numericInput:DoubleBox x:Name="CH2VTextBox" Grid.Row="2" Grid.Column="1" MinValue="0.0" Value="{Binding V2}"/>
+                    <numericInput:DoubleBox x:Name="CH2ITextBox" Grid.Row="2" Grid.Column="2" MinValue="0.0" Value="{Binding I2}"/>
                     <StackPanel Grid.Row="3" Grid.ColumnSpan="3" Orientation="Horizontal" >
                         <CheckBox x:Name="EnableOutputCheckbox" Content="EN  " />
                         <CheckBox x:Name="OCPCheckbox" Content="OCP" />
                     </StackPanel>
                     <DockPanel Grid.Row="4" Grid.ColumnSpan="3" >
                         <CheckBox DockPanel.Dock="Left" x:Name="OVPCheckbox" Content="OVP: " VerticalAlignment="Center" />
-                        <numericInput:DoubleBox x:Name="OVPLevelTextBox" Text="22" CanValueBeNull="True" MinValue="0" MaxValue="22" />
+                        <numericInput:DoubleBox x:Name="OVPLevelTextBox" Value="{Binding OVPLevel}" CanValueBeNull="True" MinValue="0" MaxValue="22" />
                     </DockPanel>
                     <DockPanel Grid.Row="5" Grid.ColumnSpan="3" HorizontalAlignment="Right">
                         <Button DockPanel.Dock="Right" x:Name="ApplyProgramButton" Content="Apply" Click="ApplyProgramButton_Click" IsEnabled="False" />
@@ -199,9 +199,9 @@
                                 <RadioButton GroupName="AcqSenseMode" x:Name="AcqDVMRadioButton" Tag="DVM" Content="DVM "/>
                             </StackPanel>
                             <Label x:Name="DurationLabel" Grid.Row="1" Grid.Column="0" Content="Time (s): " VerticalAlignment="Center"/>
-                            <numericInput:DoubleBox x:Name="DurationTextBox" Grid.Row="1" Grid.Column="1"  Text="1.0" VerticalAlignment="Center" MinValue="0"/>
+                            <numericInput:DoubleBox x:Name="DurationTextBox" Grid.Row="1" Grid.Column="1" Value="{Binding AcqDuration}" VerticalAlignment="Center" MinValue="0"/>
                             <Label x:Name="NumPointsLabel" Grid.Row="2" Grid.Column="0"  Content="Num Pts: " VerticalAlignment="Center"/>
-                            <numericInput:IntBox x:Name="NumPtsTextBox" Grid.Row="2" Grid.Column="1" Text="1024" VerticalAlignment="Center" MinValue="1" MaxValue="4096"/>
+                            <numericInput:IntBox x:Name="NumPtsTextBox" Grid.Row="2" Grid.Column="1" Value="{Binding AcqNumPoints}" VerticalAlignment="Center" MinValue="1" MaxValue="4096"/>
                             <Label x:Name="NumSegmentsLabel" Grid.Row="3" Grid.Column="0"  Content="Segments: " VerticalAlignment="Center"/>
                             <numericInput:IntBox x:Name="NumSegmentsTextBox" Grid.Row="3" Grid.Column="1" Value="{Binding AcqSegments}" VerticalAlignment="Center" MinValue="1" />
                         </Grid>
@@ -288,8 +288,7 @@
             </TabItem>
         </TabControl>
         <WindowsFormsHost x:Name="ZedGraphHost"  Grid.Column="1" Margin="10">
-            <zed:ZedGraphControl x:Name="zgc"
-                                 />
+            <zed:ZedGraphControl x:Name="zgc" />
         </WindowsFormsHost>
     </DockPanel>
 </Window>

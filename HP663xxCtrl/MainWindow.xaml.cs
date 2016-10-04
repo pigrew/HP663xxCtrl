@@ -99,6 +99,7 @@ namespace HP663xxCtrl {
                             ClearProtectionButton.IsEnabled = true;
                             LogButton.IsEnabled = true;
                             StopLoggingButton.IsEnabled = false;
+                            AddressComboBox.IsEnabled = false;
                             break;
                         case InstrumentWorker.StateEnum.Disconnected:
                             ConnectionStatusBarItem.Content = "DISCONNECTED";
@@ -108,6 +109,7 @@ namespace HP663xxCtrl {
                             ClearProtectionButton.IsEnabled = false;
                             LogButton.IsEnabled = false;
                             ModelStatusBarItem.Content = "-----";
+                            AddressComboBox.IsEnabled = true;
                             break;
                         case InstrumentWorker.StateEnum.Measuring:
                             ConnectionStatusBarItem.Content = "MEASURING"; break;
@@ -121,6 +123,7 @@ namespace HP663xxCtrl {
             InstThread.Start();
         }
         private void DisconnectButton_Click(object sender, RoutedEventArgs e) {
+            ConnectionStatusBarItem.Content = "DISCONNECTING";
             InstWorker.RequestShutdown();
         }
         private void UpdateStateLabels(object sender, HP663xx.InstrumentState state) {
@@ -187,10 +190,10 @@ namespace HP663xxCtrl {
         void HandleProgramDetailsReadback(object sender, HP663xx.ProgramDetails details) {
             EnableOutputCheckbox.IsChecked = details.Enabled;
             OCPCheckbox.IsChecked = details.OCP;
-            CH1VTextBox.Text = details.V1.ToString();
-            CH1ITextBox.Text = details.I1.ToString();
-            CH2VTextBox.Text = details.V2.ToString();
-            CH2ITextBox.Text = details.I2.ToString();
+            VM.V1 = details.V1;
+            VM.I1 = details.I1;
+            VM.V2 = details.V2;
+            VM.I2 = details.I2;
             DVMGroupBox.Visibility = details.HasDVM ?
                 System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
             var CH2Visibility = details.HasOutput2 ?
@@ -200,7 +203,7 @@ namespace HP663xxCtrl {
             CH2VTextBox.Visibility = CH2Visibility;
             CH2ITextBox.Visibility = CH2Visibility;
             OVPCheckbox.IsChecked = details.OVP;
-            OVPLevelTextBox.Text = details.OVPVal.ToString();
+            VM.OVPLevel = details.OVPVal;
             var IDSplit = details.ID.Split(new char[] {','});
             ModelStatusBarItem.Content = IDSplit[1] + " (" + IDSplit[2].ToUpper() + ")";
 
