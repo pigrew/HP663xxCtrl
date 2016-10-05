@@ -8,6 +8,17 @@ using System.Text;
 namespace HP663xxCtrl  {
     public class MainWindowVm : INotifyPropertyChanged {
 
+        bool _HasDVM = true;
+        public bool HasDVM {
+            get { return _HasDVM; }
+            set { if (value != _HasDVM) { _HasDVM = value; NotifyPropertyChanged(); } }
+        }
+        bool _HasChannel2 = true;
+        public bool HasChannel2 {
+            get { return _HasChannel2; }
+            set { if (value != _HasChannel2) { _HasChannel2 = value; NotifyPropertyChanged(); } }
+        }
+
         private double _OVPLevel = 20;
         public double OVPLevel {
             get { return _OVPLevel; }

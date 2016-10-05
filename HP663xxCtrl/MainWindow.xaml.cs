@@ -197,14 +197,9 @@ namespace HP663xxCtrl {
             VM.I1 = details.I1;
             VM.V2 = details.V2;
             VM.I2 = details.I2;
-            DVMGroupBox.Visibility = details.HasDVM ?
-                System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
-            var CH2Visibility = details.HasOutput2 ?
-                System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
-            CH2ReadbackGroupBox.Visibility = CH2Visibility;
-            CH2ProgramLabel.Visibility = CH2Visibility;
-            CH2VTextBox.Visibility = CH2Visibility;
-            CH2ITextBox.Visibility = CH2Visibility;
+            VM.HasChannel2 = details.HasOutput2;
+            VM.HasDVM = details.HasDVM;
+            
             OVPCheckbox.IsChecked = details.OVP;
             VM.OVPLevel = details.OVPVal;
             var IDSplit = details.ID.Split(new char[] {','});
@@ -316,8 +311,8 @@ namespace HP663xxCtrl {
                 ZedgraphLoggingMode = false;
 
                 InstrumentWorker.AcquireDetails details = new InstrumentWorker.AcquireDetails();
-                details.NumPoints = int.Parse(NumPtsTextBox.Text);
-                double duration = double.Parse(DurationTextBox.Text.Trim());
+                details.NumPoints = VM.AcqNumPoints;
+                double duration = VM.AcqDuration;
                 details.Interval = duration / details.NumPoints;
                 details.Level = VM.TriggerLevel;
                 details.SampleOffset = VM.TriggerOffset;
@@ -370,26 +365,19 @@ namespace HP663xxCtrl {
             details.OCP = OCPCheckbox.IsChecked.Value;
             details.OVP = OVPCheckbox.IsChecked.Value;
 
-            if (!Double.TryParse(CH1VTextBox.Text, out details.V1)) {
-                ParseError = ParseError + "Cannot parse Ch 1 Voltage.\n";
+            if (Validation.GetHasError(CH1VTextBox) || Validation.GetHasError(CH1ITextBox)) {
+                ParseError = ParseError + "Ch 1 Voltage or current is invalid.\n";
             }
-            if (!Double.TryParse(CH1ITextBox.Text, out details.I1)) {
-                ParseError = ParseError + "Cannot parse Ch 1 Current.\n";
-            }
-            if (!Double.TryParse(CH2VTextBox.Text, out details.V2)) {
-                ParseError = ParseError + "Cannot parse Ch 2 Voltage.\n";
-            }
-            if (!Double.TryParse(CH2ITextBox.Text, out details.I2)) {
-                ParseError = ParseError + "Cannot parse Ch 2 Current.\n";
+            if (VM.HasChannel2 && ( Validation.GetHasError(CH1VTextBox) || Validation.GetHasError(CH1ITextBox))) {
+                ParseError = ParseError + "Ch 2 Voltage or current is invalid.\n";
             }
 
             details.OVPVal = double.NaN;
             if (details.OVP) {
-                if (!Double.TryParse(OVPLevelTextBox.Text, out details.OVPVal)) {
-                    ParseError = ParseError + "Cannot parse OVP Level.\n";
+                if (Validation.GetHasError(OVPLevelTextBox)) {
+                    ParseError = ParseError + "OVP level is invalid.\n";
                     // 22 V is the max valid value on a 66309D
-                } else if (details.OVPVal < 0 || details.OVPVal > 22.0)
-                    ParseError = ParseError + "OVP is outsize of the valid range (0.0 -> 22.0).\n";
+                }
             }
             // FIXME: Add some more range checking
             if (ParseError != "") {
