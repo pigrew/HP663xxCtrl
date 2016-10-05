@@ -451,7 +451,7 @@ namespace HP663xxCtrl
         {
             dev.IO = (IMessage)rm.Open(addr, mode: AccessMode.NO_LOCK);
             dev.IO.Clear(); // clear I/O buffer
-            dev.IO.Timeout = 5000; // 3 seconds
+            dev.IO.Timeout = 5000; // 5 seconds
 
             dev.WriteString("*IDN?");
             ID = dev.ReadString();
