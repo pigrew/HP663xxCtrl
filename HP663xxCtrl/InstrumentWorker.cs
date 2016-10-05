@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace HP663xxCtrl {
-    class InstrumentWorker {
+    public class InstrumentWorker {
         HP663xx dev = null;
         public string VisaAddress {
            get ; private set;

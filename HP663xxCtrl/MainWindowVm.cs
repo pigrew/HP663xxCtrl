@@ -60,7 +60,7 @@ namespace HP663xxCtrl  {
             set { if (value != _AcqNumPoints) { _AcqNumPoints = value; NotifyPropertyChanged(); } }
         }
 
-        private int _AcqSegments = 1024;
+        private int _AcqSegments = 1;
         public int AcqSegments {
             get { return _AcqSegments; }
             set { if (value != _AcqSegments) { _AcqSegments = value; NotifyPropertyChanged(); } }

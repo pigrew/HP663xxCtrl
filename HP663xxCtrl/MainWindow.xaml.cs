@@ -176,11 +176,10 @@ namespace HP663xxCtrl {
             zgc.GraphPane.XAxis.Title.Text = "Time";
             
             zgc.GraphPane.YAxis.Title.Text = "Current";
-            double[] xlist = Enumerable.Range(0, result.Data[0].Length).Select(x => (double)((x) * result.TimeInterval)).ToArray();
+            double[] xlist = Enumerable.Range(AcqDataRecord.details.SampleOffset, result.Data[0].Length).Select(x => (double)((x) * result.TimeInterval)).ToArray();
             for (int i = 0; i < result.Data.Length; i++) {
-                zgc.GraphPane.AddCurve("Acq" + i.ToString(),
-                    xlist,
-                    result.Data[i],
+                zgc.GraphPane.AddCurve("Acq" + (zgc.GraphPane.CurveList.Count).ToString(),
+                    xlist, result.Data[i],
                     CurveColors[i % (CurveColors.Length)], SymbolType.None);
             }
             zgc.AxisChange();
@@ -297,18 +296,25 @@ namespace HP663xxCtrl {
             InstWorker.StopAcquireRequested = true;
         }
 
+        AcquisitionData AcqDataRecord = null;
         private void AcquireButton_Click(object sender, RoutedEventArgs e) {
 
             if (InstWorker != null) {
-                var blah = GetTreeErrors(AcquisitionTabItem);
-                InstWorker.StopAcquireRequested = false;
+                var errors = GetTreeErrors(AcquisitionTabItem);
+
+                if (errors.Count > 0) {
+                    MessageBox.Show("Invalid Acquisition/trigger settings.");
+                    return;
+                }
+
+                zgc.GraphPane.CurveList.Clear();
+                ZedgraphLoggingMode = false;
                 AcquireButton.IsEnabled = false;
                 ApplyProgramButton.IsEnabled = false;
                 ClearProtectionButton.IsEnabled = false;
                 StopAcquireButton.IsEnabled = true;
                 LogButton.IsEnabled = false;
-                zgc.GraphPane.CurveList.Clear();
-                ZedgraphLoggingMode = false;
+                InstWorker.StopAcquireRequested = false;
 
                 InstrumentWorker.AcquireDetails details = new InstrumentWorker.AcquireDetails();
                 details.NumPoints = VM.AcqNumPoints;
@@ -317,6 +323,7 @@ namespace HP663xxCtrl {
                 details.Level = VM.TriggerLevel;
                 details.SampleOffset = VM.TriggerOffset;
                 details.TriggerHysteresis = VM.TriggerHysteresis;
+
                 if (AcqVoltageRadioButton.IsChecked.Value) {
                     details.SenseMode = HP663xx.SenseModeEnum.VOLTAGE;
                     zgc.GraphPane.YAxis.Title.Text = "Voltage (V)";
@@ -337,6 +344,10 @@ namespace HP663xxCtrl {
                     case "EITHER": details.triggerEdge = HP663xx.TriggerSlopeEnum.Either; break;
                     default: throw new Exception();
                 }
+                AcqDataRecord = new AcquisitionData() {
+                    details = details,
+                    StartAcquisitionTime = DateTime.Now
+                };
                 InstWorker.RequestAcquire(details);
             }
         }
@@ -368,9 +379,17 @@ namespace HP663xxCtrl {
             if (Validation.GetHasError(CH1VTextBox) || Validation.GetHasError(CH1ITextBox)) {
                 ParseError = ParseError + "Ch 1 Voltage or current is invalid.\n";
             }
-            if (VM.HasChannel2 && ( Validation.GetHasError(CH1VTextBox) || Validation.GetHasError(CH1ITextBox))) {
-                ParseError = ParseError + "Ch 2 Voltage or current is invalid.\n";
+            details.V1 = VM.V1;
+            details.I1 = VM.I1;
+
+            if (VM.HasChannel2) {
+                if (Validation.GetHasError(CH2VTextBox) || Validation.GetHasError(CH2ITextBox)) {
+                    ParseError = ParseError + "Ch 2 Voltage or current is invalid.\n";
+                }
+                details.V2 = VM.V2;
+                details.I2 = VM.I2;
             }
+            
 
             details.OVPVal = double.NaN;
             if (details.OVP) {
@@ -379,9 +398,9 @@ namespace HP663xxCtrl {
                     // 22 V is the max valid value on a 66309D
                 }
             }
-            // FIXME: Add some more range checking
+
             if (ParseError != "") {
-                MessageBox.Show(ParseError, "Parse Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(ParseError, "Invalid Data Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
             InstWorker.RequestProgram(details);
@@ -392,7 +411,7 @@ namespace HP663xxCtrl {
         }
 
         private void LoggerCurveCheckBox_Checked(object sender, RoutedEventArgs e) {
-            if (ZedgraphLoggingMode) {
+            if (ZedgraphLoggingMode && zgc.GraphPane.CurveList.Count == 4) {
                 zgc.GraphPane.CurveList[0].IsVisible = LoggerMinCheckBox.IsChecked.Value;
                 zgc.GraphPane.CurveList[1].IsVisible = LoggerMeanCheckBox.IsChecked.Value;
                 zgc.GraphPane.CurveList[2].IsVisible = LoggerMaxCheckBox.IsChecked.Value;

@@ -129,11 +129,11 @@ namespace HP663xxCtrl
             // Maximums
             parts = Query("VOLT? MAX; CURR? MAX").Trim().Split(new char[] {';'});
             details.MaxV1 = double.Parse(parts[0],CI);
-            details.MaxI1 = double.Parse(parts[0],CI);
+            details.MaxI1 = double.Parse(parts[1],CI);
             if (HasOutput2) {
                 parts = Query("VOLT2? MAX; CURR2? MAX").Trim().Split(new char[] { ';' });
                 details.MaxV2 = double.Parse(parts[0],CI);
-                details.MaxI2 = double.Parse(parts[0],CI);
+                details.MaxI2 = double.Parse(parts[1],CI);
 
             }
             double range = Double.Parse(Query(":sense:curr:range?").Trim(),CI);
