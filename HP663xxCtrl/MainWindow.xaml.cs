@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -23,6 +24,14 @@ namespace HP663xxCtrl {
     public partial class MainWindow : Window {
 
         MainWindowVm VM;
+
+        InstrumentWorker InstWorker;
+        Thread InstThread;
+
+        bool ZedgraphLoggingMode = false;
+        DateTime LogStartTime;
+
+        AcquisitionData AcqDataRecord = null;
 
         public MainWindow() {
             InitializeComponent();
@@ -50,8 +59,6 @@ namespace HP663xxCtrl {
             System.Drawing.Color.Black, System.Drawing.Color.Red,
             System.Drawing.Color.Blue, System.Drawing.Color.Green
         };
-        InstrumentWorker InstWorker;
-        Thread InstThread;
         private void GoButton_Click(object sender, RoutedEventArgs e) {
             if (InstThread != null || InstWorker != null)
                 return;
@@ -101,6 +108,9 @@ namespace HP663xxCtrl {
                             LogButton.IsEnabled = true;
                             StopLoggingButton.IsEnabled = false;
                             AddressComboBox.IsEnabled = false;
+                            // Enable saving, if measurement data is non-null
+                            if (AcqDataRecord != null && AcqDataRecord.DataSeries.Count != 0)
+                                SaveAcquireButton.IsEnabled = true;
                             break;
                         case InstrumentWorker.StateEnum.Disconnected:
                             ConnectionStatusBarItem.Content = "DISCONNECTED";
@@ -171,12 +181,15 @@ namespace HP663xxCtrl {
             DVMVLabel.Text = state.DVM.ToString("N3",nfi);
         }
         private void HandleDataAcquired(object sender, HP663xx.MeasArray result) {
-
+            // Add data to the data record, and overwrite the sampling period (it should be the same
+            // for all datapoints)
+            AcqDataRecord.SamplingPeriod = result.TimeInterval;
+            AcqDataRecord.DataSeries.AddRange(result.Data);
             ZedGraphControl zgc = (ZedGraphControl)ZedGraphHost.Child;
             zgc.GraphPane.XAxis.Title.Text = "Time";
             
             zgc.GraphPane.YAxis.Title.Text = "Current";
-            double[] xlist = Enumerable.Range(AcqDataRecord.details.SampleOffset, result.Data[0].Length).Select(x => (double)((x) * result.TimeInterval)).ToArray();
+            double[] xlist = Enumerable.Range(AcqDataRecord.AcqDetails.SampleOffset, result.Data[0].Length).Select(x => (double)((x) * result.TimeInterval)).ToArray();
             for (int i = 0; i < result.Data.Length; i++) {
                 zgc.GraphPane.AddCurve("Acq" + (zgc.GraphPane.CurveList.Count).ToString(),
                     xlist, result.Data[i],
@@ -233,8 +246,6 @@ namespace HP663xxCtrl {
                 }
             }
         }
-        bool ZedgraphLoggingMode = false;
-        DateTime LogStartTime;
         void HandleLogDatapoint(object sender, HP663xx.LoggerDatapoint dp) {
             if(!double.IsNaN(dp.Min))
                 zgc.GraphPane.CurveList[0].AddPoint(
@@ -296,7 +307,6 @@ namespace HP663xxCtrl {
             InstWorker.StopAcquireRequested = true;
         }
 
-        AcquisitionData AcqDataRecord = null;
         private void AcquireButton_Click(object sender, RoutedEventArgs e) {
 
             if (InstWorker != null) {
@@ -315,6 +325,7 @@ namespace HP663xxCtrl {
                 StopAcquireButton.IsEnabled = true;
                 LogButton.IsEnabled = false;
                 InstWorker.StopAcquireRequested = false;
+                SaveAcquireButton.IsEnabled = false;
 
                 InstrumentWorker.AcquireDetails details = new InstrumentWorker.AcquireDetails();
                 details.NumPoints = VM.AcqNumPoints;
@@ -344,11 +355,7 @@ namespace HP663xxCtrl {
                     case "EITHER": details.triggerEdge = HP663xx.TriggerSlopeEnum.Either; break;
                     default: throw new Exception();
                 }
-                AcqDataRecord = new AcquisitionData() {
-                    details = details,
-                    StartAcquisitionTime = DateTime.Now
-                };
-                InstWorker.RequestAcquire(details);
+                AcqDataRecord = InstWorker.RequestAcquire(details);
             }
         }
 
@@ -356,7 +363,65 @@ namespace HP663xxCtrl {
             StopAcquireButton.IsEnabled = false;
             InstWorker.StopAcquireRequested = true;
         }
+        private void SaveAcquireButton_Click(object sender, RoutedEventArgs e) {
+            Microsoft.Win32.SaveFileDialog sfd = new Microsoft.Win32.SaveFileDialog();
+            sfd.DefaultExt = ".csv";
+            sfd.Filter = "CSV file (.csv)|*.csv|All Files (*.*)|*.*"; // Filter files by extension
+            if (sfd.ShowDialog(this) != true) {
+                return;
+            }
+            try {
+                using (StreamWriter sw = new StreamWriter(sfd.FileName)) {
+                    // Use current culture; output files depend on the culture of the user's machine!
+                    string sep = CultureInfo.CurrentCulture.TextInfo.ListSeparator;
+                    // Write header stuff
+                    // Excel doesn't like when the file starts with "ID", so start with something else
+                    sw.WriteLine("StartTime" + sep + AcqDataRecord.StartAcquisitionTime.ToString());
+                    sw.WriteLine("ID" + sep + "\"" + AcqDataRecord.ProgramDetails.ID + "\"");
 
+                    // Program Details
+                    sw.WriteLine("OutputEnabled" + sep + AcqDataRecord.ProgramDetails.Enabled.ToString());
+                    sw.WriteLine("Detector" + sep + AcqDataRecord.ProgramDetails.Detector.ToString());
+                    sw.WriteLine("V1" + sep + AcqDataRecord.ProgramDetails.V1.ToString());
+                    sw.WriteLine("I1" + sep + AcqDataRecord.ProgramDetails.I1.ToString());
+                    // Output second channel, even if it doesn't exist, to make header equal lengths always
+                    sw.WriteLine("V2" + sep + (AcqDataRecord.ProgramDetails.HasOutput2 ?
+                        AcqDataRecord.ProgramDetails.V2.ToString() : ""));
+                    sw.WriteLine("I2" + sep + (AcqDataRecord.ProgramDetails.HasOutput2 ?
+                        AcqDataRecord.ProgramDetails.I2.ToString() : ""));
+                    sw.WriteLine("OCP" + sep + AcqDataRecord.ProgramDetails.OCP.ToString());
+                    sw.WriteLine("OVP" + sep + (AcqDataRecord.ProgramDetails.OVP ?
+                        AcqDataRecord.ProgramDetails.OVPVal.ToString() : "False"));
+                    sw.WriteLine("CurrentRange" + sep + AcqDataRecord.ProgramDetails.Range.ToString());
+                    // Trigger Details
+                    sw.WriteLine("SamplingPeriod" + sep + AcqDataRecord.SamplingPeriod.ToString());
+                    sw.WriteLine("NumPoints" + sep + AcqDataRecord.AcqDetails.NumPoints.ToString());
+                    sw.WriteLine("SenseMode" + sep + AcqDataRecord.AcqDetails.SenseMode.ToString());
+                    sw.WriteLine("TriggerEdge" + sep + AcqDataRecord.AcqDetails.triggerEdge.ToString());
+                    sw.WriteLine("TriggerLevel" + sep + AcqDataRecord.AcqDetails.Level.ToString());
+                    sw.WriteLine("TriggerHyst" + sep + AcqDataRecord.AcqDetails.TriggerHysteresis.ToString());
+                    sw.WriteLine("SampleOffset" + sep + AcqDataRecord.AcqDetails.SampleOffset.ToString());
+
+                    // Data Header
+                    sw.Write("time");
+                    for (int i = 0; i < AcqDataRecord.DataSeries.Count; i++)
+                        sw.Write(sep + "Acq" + i.ToString());
+                    sw.WriteLine("");
+                    // Data
+                    double t = AcqDataRecord.SamplingPeriod * AcqDataRecord.AcqDetails.SampleOffset;
+                    for (int i = 0; i < AcqDataRecord.DataSeries[0].Length; i++) {
+                        sw.Write(t.ToString() + sep);
+                        sw.WriteLine(String.Join(sep,
+                            AcqDataRecord.DataSeries.Select(x => x[i].ToString())));
+                        t += AcqDataRecord.SamplingPeriod;
+                    }
+                }
+            } catch (IOException ioex) {
+                MessageBox.Show(this, "IO Exception during write",
+                    "IO Exception happened during write (Abort, retry, fail?):\n\n" +
+                    ioex.Message);
+            }
+        }
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
             if (InstWorker != null) {
                 InstWorker.RequestShutdown();

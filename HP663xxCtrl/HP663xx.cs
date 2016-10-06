@@ -454,7 +454,7 @@ namespace HP663xxCtrl
             dev.IO.Timeout = 5000; // 5 seconds
 
             dev.WriteString("*IDN?");
-            ID = dev.ReadString();
+            ID = dev.ReadString().Trim();
             if (ID.Contains(",66309B,") || ID.Contains(",66319B,")) {
                 HasDVM = false; HasOutput2 = true;
             } else if (ID.Contains(",66309D,") || ID.Contains(",66319D,")) {

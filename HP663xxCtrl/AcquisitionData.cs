@@ -9,10 +9,9 @@ namespace HP663xxCtrl {
         // General
         public DateTime StartAcquisitionTime;
         public double SamplingPeriod; // Rounded version, as returned by the instrument
-        public List<double[]> DataSeries;
-        public double ProgV1, ProgI1, ProgV2, ProgI2;
+        public List<double[]> DataSeries = new List<double[]>();
+        public HP663xx.ProgramDetails ProgramDetails;
+        public InstrumentWorker.AcquireDetails AcqDetails;
 
-        // Trigger Configuration
-        public InstrumentWorker.AcquireDetails details;
     }
 }

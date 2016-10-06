@@ -18,6 +18,7 @@ namespace HP663xxCtrl {
 
         volatile bool StopRequested = false;
         public volatile bool StopAcquireRequested = false;
+        HP663xx.ProgramDetails LastProgramDetails;
 
         public enum StateEnum {
             Disconnected,
@@ -65,7 +66,9 @@ namespace HP663xxCtrl {
             dev = new HP663xx(VisaAddress);
             if (StateChanged != null) StateChanged(this, StateEnum.Connected);
             if (ProgramDetailsReadback != null) {
-                ProgramDetailsReadback(this, dev.ReadProgramDetails());
+                HP663xx.ProgramDetails progDetails = dev.ReadProgramDetails();
+                LastProgramDetails = progDetails;
+                ProgramDetailsReadback(this, LastProgramDetails);
             }
             RefreshDisplay();
             LastRefresh = DateTime.Now;
@@ -76,7 +79,7 @@ namespace HP663xxCtrl {
                 while (EventQueue.TryTake(out cmd, timeout<10?30:timeout)) {
                     switch (cmd.cmd) {
                         case CommandEnum.IRange:
-                            dev.SetCurrentRange((HP663xx.CurrentRanges)cmd.arg);
+                            DoSetCurrentRange((HP663xx.CurrentRanges)cmd.arg);
                             break;
                         case CommandEnum.Acquire:
                             DoAcquisition((AcquireDetails)cmd.arg);
@@ -110,6 +113,10 @@ namespace HP663xxCtrl {
                 WorkerDone.Invoke(this,null);
         }
         public event EventHandler<HP663xx.MeasArray> DataAcquired;
+        void DoSetCurrentRange(HP663xx.CurrentRanges range) {
+            dev.SetCurrentRange(range);
+            LastProgramDetails.Range = range;
+        }
         public void RequestIRange(HP663xx.CurrentRanges range) {
             EventQueue.Add(new Command() { cmd = CommandEnum.IRange, arg = range });
         }
@@ -153,13 +160,23 @@ namespace HP663xxCtrl {
             if (StateChanged != null) StateChanged(this, StateEnum.Connected);
         }
         // Must set StopAcquireRequested to false before starting acquisition
-        public void RequestAcquire(AcquireDetails details) {
+        //
+        // Also, the returned AcquisitionData structure will have a blank 
+        // SamplingPeriod and DataSeries
+        //
+        public AcquisitionData RequestAcquire(AcquireDetails details) {
+            AcquisitionData data = new AcquisitionData();
+            data.AcqDetails = details;
+            data.ProgramDetails = LastProgramDetails;
+            data.StartAcquisitionTime = DateTime.Now;
+
             if (StopAcquireRequested == true)
-                return;
+                return data;
             EventQueue.Add(new Command() {
                 cmd = CommandEnum.Acquire,
                 arg = details
             });
+            return data;
         }
         public event EventHandler<HP663xx.LoggerDatapoint> LogerDatapointAcquired;
         void DoLog(HP663xx.SenseModeEnum mode) {
@@ -200,7 +217,17 @@ namespace HP663xxCtrl {
                 dev.EnableOutput(details.Enabled);
             }
             LastRefresh = DateTime.MinValue;
+            // Copy element by element to keep old value of detector, etc....
+            LastProgramDetails.V1 = details.V1;
+            LastProgramDetails.I1 = details.I1;
+            LastProgramDetails.V2 = details.V2;
+            LastProgramDetails.I2 = details.I2;
+            LastProgramDetails.OVP = details.OVP;
+            LastProgramDetails.OVPVal = details.OVPVal;
+            LastProgramDetails.Enabled = details.Enabled;
+            LastProgramDetails.OCP = details.OCP;
         }
+
         public void RequestProgram(HP663xx.ProgramDetails details) {
             EventQueue.Add(new Command() {
                 cmd = CommandEnum.Program,
@@ -221,6 +248,7 @@ namespace HP663xxCtrl {
         }
         void DoACDCDetector(HP663xx.CurrentDetectorEnum detector) {
             dev.SetCurrentDetector(detector);
+            LastProgramDetails.Detector = detector;
         }
         public void RequestACDCDetector(HP663xx.CurrentDetectorEnum detector) {
             EventQueue.Add(new Command() {

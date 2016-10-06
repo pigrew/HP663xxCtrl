@@ -242,6 +242,7 @@
                     <StackPanel>
                         <Button x:Name="AcquireButton" Content="Acquire" Click="AcquireButton_Click" IsEnabled="False"/>
                         <Button x:Name="StopAcquireButton" Content="Stop" Click="StopAcquireButton_Click" IsEnabled="False"/>
+                        <Button x:Name="SaveAcquireButton" Content="Save..." Click="SaveAcquireButton_Click" IsEnabled="False"/>
                     </StackPanel>
                 </StackPanel>
             </TabItem>
