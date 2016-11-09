@@ -18,7 +18,7 @@
             <Setter Property="FontFamily" Value="Consolas" />
             <Setter Property="FontWeight" Value="Bold"/>
         </Style>
-        <Style TargetType="{x:Type FrameworkElement}" x:Key="Ch1_Visibility">
+        <Style TargetType="{x:Type FrameworkElement}" x:Key="Ch2_Visibility">
             <Setter Property="Visibility" Value="{Binding HasChannel2, Converter={StaticResource BooleanToVisibilityConverter}}" />
         </Style>
     </Window.Resources>
@@ -84,7 +84,7 @@
                         </TextBlock.RenderTransform><Run Text="OVP OCP CV CC+"/></TextBlock>
                 </Grid>
             </GroupBox>
-            <GroupBox x:Name="CH2ReadbackGroupBox" Header="Channel 2" Style="{StaticResource Ch1_Visibility}">
+            <GroupBox x:Name="CH2ReadbackGroupBox" Header="Channel 2" Style="{StaticResource Ch2_Visibility}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*"/>
@@ -131,13 +131,13 @@
                         <RowDefinition Height="auto"/>
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="1: " />
-                    <TextBlock x:Name="CH2ProgramLabel" Grid.Row="2" Grid.Column="0" Text="2: " Style="{StaticResource Ch1_Visibility}"/>
+                    <TextBlock x:Name="CH2ProgramLabel" Grid.Row="2" Grid.Column="0" Text="2: " Style="{StaticResource Ch2_Visibility}"/>
                     <TextBlock Grid.Row="0" Grid.Column="1" Text="V" HorizontalAlignment="Center" />
                     <TextBlock Grid.Row="0" Grid.Column="2" Text="I" HorizontalAlignment="Center" />
-                    <numericInput:DoubleBox x:Name="CH1VTextBox" Grid.Row="1" Grid.Column="1" MinValue="0.0" Value="{Binding V1}" Style="{StaticResource Ch1_Visibility}"/>
-                    <numericInput:DoubleBox x:Name="CH1ITextBox" Grid.Row="1" Grid.Column="2" MinValue="0.0" Value="{Binding I1}" Style="{StaticResource Ch1_Visibility}" />
-                    <numericInput:DoubleBox x:Name="CH2VTextBox" Grid.Row="2" Grid.Column="1" MinValue="0.0" Value="{Binding V2}" Style="{StaticResource Ch1_Visibility}" />
-                    <numericInput:DoubleBox x:Name="CH2ITextBox" Grid.Row="2" Grid.Column="2" MinValue="0.0" Value="{Binding I2}" Style="{StaticResource Ch1_Visibility}"/>
+                    <numericInput:DoubleBox x:Name="CH1VTextBox" Grid.Row="1" Grid.Column="1" MinValue="0.0" Value="{Binding V1}" />
+                    <numericInput:DoubleBox x:Name="CH1ITextBox" Grid.Row="1" Grid.Column="2" MinValue="0.0" Value="{Binding I1}"  />
+                    <numericInput:DoubleBox x:Name="CH2VTextBox" Grid.Row="2" Grid.Column="1" MinValue="0.0" Value="{Binding V2}" Style="{StaticResource Ch2_Visibility}" />
+                    <numericInput:DoubleBox x:Name="CH2ITextBox" Grid.Row="2" Grid.Column="2" MinValue="0.0" Value="{Binding I2}" Style="{StaticResource Ch2_Visibility}"/>
                     <StackPanel Grid.Row="3" Grid.ColumnSpan="3" Orientation="Horizontal" >
                         <CheckBox x:Name="EnableOutputCheckbox" Content="EN  " />
                         <CheckBox x:Name="OCPCheckbox" Content="OCP" />
@@ -192,10 +192,10 @@
                                 <ColumnDefinition/>
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                                <RowDefinition/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
                             </Grid.RowDefinitions>
                             <StackPanel Grid.ColumnSpan="3" Orientation="Horizontal">
                                 <RadioButton GroupName="AcqSenseMode" x:Name="AcqVoltageRadioButton"  Tag="V" Content="Voltage "/>
@@ -210,12 +210,12 @@
                             <numericInput:IntBox x:Name="NumSegmentsTextBox" Grid.Row="3" Grid.Column="1" Value="{Binding AcqSegments}" VerticalAlignment="Center" MinValue="1" />
                         </Grid>
                     </GroupBox>
-                    <GroupBox Header="Trigger">
+                    <GroupBox Header="Trigger" >
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="1*"/>
-                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="auto"/>
+                                <ColumnDefinition  Width="auto" MinWidth="40pt"/>
+                                <ColumnDefinition  Width="auto"/>
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition/>
@@ -223,20 +223,20 @@
                                 <RowDefinition/>
                                 <RowDefinition/>
                             </Grid.RowDefinitions>
-                            <ComboBox x:Name="TriggerComboBox" Grid.Row="0" Grid.ColumnSpan="3"  AllowDrop="True" SelectedIndex="0">
+                            <ComboBox x:Name="TriggerComboBox" Grid.Row="0" Grid.ColumnSpan="4"  AllowDrop="True" SelectedIndex="0">
                                 <ComboBoxItem Tag="IMMED" Content="Immediate"/>
                                 <ComboBoxItem Tag="POS" Content="Positive Slope"/>
                                 <ComboBoxItem Tag="NEG" Content="Negative Slope"/>
                                 <ComboBoxItem Tag="EITHER" Content="Either Slope"/>
                             </ComboBox>
-                            <Label x:Name="TrigLevelLabel" Grid.Row="1" Grid.Column="0"  Content="Trigger Level: " VerticalAlignment="Center"/>
-                            <numericInput:DoubleBox x:Name="TrigLevelTextBox"   Grid.Row="1" Grid.Column="1" Value="{Binding TriggerLevel}" VerticalAlignment="Center" />
-                            <TextBlock Text=" A/V"   Grid.Row="1" Grid.Column="2" VerticalAlignment="Center"/>
+                            <Label x:Name="TrigLevelLabel" Grid.Column="0" Grid.Row="1" Content="Trigger Level: " VerticalAlignment="Center"/>
+                            <numericInput:DoubleBox x:Name="TrigLevelTextBox"   Grid.Row="1" Grid.Column="1" Value="{Binding TriggerLevel}" VerticalAlignment="Center"/>
+                            <TextBlock Text=" A/V"   Grid.Row="1" Grid.Column="2" VerticalAlignment="Center"  />
                             <Label Grid.Row="2" Grid.Column="0"  Content="Hysteresis: " VerticalAlignment="Center"/>
-                            <numericInput:DoubleBox x:Name="TrigHystTextBox"   Grid.Row="2" Grid.Column="1"  VerticalAlignment="Center"  MinValue="0" Value="{Binding TriggerHysteresis}"/>
-                            <TextBlock Text=" A/V"   Grid.Row="2" Grid.Column="2" VerticalAlignment="Center"/>
-                            <Label x:Name="SampleOffsetLabel" Grid.Row="3" Grid.Column="0"  Content="Sample Offset: " VerticalAlignment="Center"/>
-                            <numericInput:IntBox x:Name="SampleOffsetTextBox" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Value="{Binding TriggerOffset}" VerticalAlignment="Center" MinValue="-2000" MaxValue="2000000000"/>
+                            <numericInput:DoubleBox x:Name="TrigHystTextBox"   Grid.Row="2" Grid.Column="1"  VerticalAlignment="Center"  MinValue="0" Value="{Binding TriggerHysteresis}" />
+                            <TextBlock Text=" A/V"   Grid.Row="2" Grid.Column="2" VerticalAlignment="Center" Grid.ColumnSpan="2"/>
+                            <Label x:Name="SampleOffsetLabel" Grid.Row="3" Grid.Column="0"  Content="Sample Offset: " VerticalAlignment="Center" Grid.ColumnSpan="2"  />
+                            <numericInput:IntBox x:Name="SampleOffsetTextBox" Grid.Row="3" Grid.Column="1"  Value="{Binding TriggerOffset}" VerticalAlignment="Center" MinValue="-2000" MaxValue="2000000000" />
                         </Grid>
                     </GroupBox>
                     <StackPanel>
@@ -252,20 +252,20 @@
                     <GroupBox Header="Acquisition" >
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition/>
+                                <ColumnDefinition />
                                 <ColumnDefinition/>
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                                <RowDefinition/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
                             </Grid.RowDefinitions>
-                            <StackPanel Grid.ColumnSpan="3" Orientation="Horizontal">
+                            <StackPanel Grid.ColumnSpan="2" Orientation="Horizontal">
                                 <RadioButton GroupName="LogSenseMode" x:Name="LogVoltageRadioButton"  Tag="V" Content="Voltage "/>
                                 <RadioButton GroupName="LogSenseMode" x:Name="LogCurrentRadioButton" Tag="I" Content="Current " IsChecked="True"/>
                                 <RadioButton GroupName="LogSenseMode" x:Name="LogDVMRadioButton" Tag="DVM" Content="DVM "/>
                             </StackPanel>
+                            <Label Grid.Row="1" Grid.Column="0" Content="Interval: "/>
+                            <numericInput:DoubleBox MinValue="0" Grid.Row="1" Grid.Column="1"/>
                         </Grid>
                     </GroupBox>
                     <GroupBox Header="Display">

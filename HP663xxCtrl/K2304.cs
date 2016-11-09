@@ -6,18 +6,15 @@ using System.Text;
 using System.Threading.Tasks;
 using Ivi.Visa;
 
-namespace HP663xxCtrl
-{
-    public class HP663xx :IFastSMU
-    {
+namespace HP663xxCtrl {
+    class K2304 :IFastSMU {
         CultureInfo CI = System.Globalization.CultureInfo.InvariantCulture;
 
         IMessageBasedSession dev;
         public bool HasDVM { get; private set; }
         public bool HasOutput2 { get; private set; }
-        public bool HasOVP { get { return true; } }
 
-
+        public bool HasOVP { get { return false; } }
         string ID;
         public void Reset()
         {
@@ -37,69 +34,57 @@ namespace HP663xxCtrl
             }
         }
         [Flags]
-        public enum OperationStatusEnum
-        {
-            Calibration = 1,
-            WaitingForTrigger = 32,
-            CV = 256,
-            CV2 = 512,
-            CCPositive = 1024,
-            CCNegative = 2048,
-            CC2 = 4096
+        public enum MeasurementEventEnum {
+            ReadingOverflow = 8,
+            PulseTriggertimeout = 16,
+            ReadingAvailable = 32,
+            BufferFull = 512
         }
         [Flags]
-        public enum QuestionableStatusEnum
+        public enum QuestionableEventEnum {
+            CalibrationSummary = 256, // invalid calibration
+        }
+        [Flags]
+        public enum OperationStatusEnum
         {
-            OV = 1,
-            OCP = 2,
-            FP_Local = 8, // frontpanel local was pressed
-            OverTemperature = 16,
-            OpenSenseLead = 32,
-            Unregulated2 = 256,
-            RemoteInhibit = 512,
-            Unregulated = 1024,
-            OverCurrent2 = 4096,
-            MeasurementOverload = 16384
+            CC = 8,
+            CurrentLimitTripped = 16,
+            HeatSinkShutdown = 32,
+            PowerSupplyShutdown =64
         }
         [Flags]
         public enum StatusByteEnum
         {
+            MeasurementSummary = 1,
+            ErrorAvailable = 4,
             QuestionableStatusSummary = 8,
-            MesasgeAvailable = 16,
+            MessageAvailable = 16,
             EventSTB = 32,
             MasterStatusSummary = 64,
             OperationStatusSummary = 128
         }
 
         public ProgramDetails ReadProgramDetails() {
-
-            string response = Query("OUTP?;VOLT?;CURR?;"
-                + ":VOLT:PROT:STAT?;:VOLT:PROT?;:CURR:PROT:STAT?" +
-                (HasOutput2? ";:VOLT2?;CURR2?":"")).Trim();
-            string[] parts = response.Split(new char[] { ';' });
             ProgramDetails details = new ProgramDetails() {
-                Enabled = (parts[0] == "1"),
-                V1 = double.Parse(parts[1],CI),
-                I1 = double.Parse(parts[2],CI),
-                OVP = (parts[3] == "1"),
-                OVPVal = double.Parse(parts[4],CI),
-                OCP = (parts[5] == "1"),
-                V2 = HasOutput2? double.Parse(parts[6],CI):double.NaN,
-                I2 = HasOutput2 ? double.Parse(parts[7],CI) : double.NaN,
+                OVP =false, // no OVP on this unit
+                OVPVal = Double.NaN,
                 HasDVM = HasDVM,
                 HasOutput2 = HasOutput2,
                 ID = ID
             };
+            details.Enabled = (Query("OUTP?").Trim().StartsWith("1"));
+            details.V1 = double.Parse(Query("VOLT?").Trim(),CI);
+            details.I1 = double.Parse(Query(":CURR:LIMIT?").Trim(), CI);
+            details.OCP = (Query(":CURR:LIMIT:TYPE?").Trim()== "TRIP");
             // Maximums
-            parts = Query("VOLT? MAX; CURR? MAX").Trim().Split(new char[] {';'});
-            details.MaxV1 = double.Parse(parts[0],CI);
-            details.MaxI1 = double.Parse(parts[1],CI);
-            if (HasOutput2) {
+            details.MaxV1 = double.Parse(Query("VOLT? MAX").Trim(), CI);
+            details.MaxI1 = double.Parse(Query(":SENSE:CURRENT:RANGE? MAX"),CI);
+            /*if (HasOutput2) {
                 parts = Query("VOLT2? MAX; CURR2? MAX").Trim().Split(new char[] { ';' });
                 details.MaxV2 = double.Parse(parts[0],CI);
                 details.MaxI2 = double.Parse(parts[1],CI);
 
-            }
+            }*/
             double range = Double.Parse(Query(":sense:curr:range?").Trim(),CI);
             if (range < 0.03)
                 details.Range = CurrentRanges.TWENTY_mA;
@@ -108,44 +93,31 @@ namespace HP663xxCtrl
             else
                 details.Range = CurrentRanges.HIGH;
 
-            string detector = Query("SENSE:CURR:DET?").Trim();
-            switch (detector) {
-                case "DC": details.Detector = CurrentDetectorEnum.DC; break;
-                case "ACDC": details.Detector = CurrentDetectorEnum.ACDC; break;
-                default: throw new Exception();
-            }
+            details.Detector = CurrentDetectorEnum.ACDC;
+
             return details;
         }
         public InstrumentState ReadState(bool measureCh2=true, bool measureDVM=true) {
             InstrumentState ret = new InstrumentState();
             DateTime start = DateTime.Now;
-            // ~23 ms
-            string statusStr = Query("stat:oper:cond?;:stat:ques:cond?;:sense:curr:range?;" +
-                ":OUTP1?;VOLTage:PROTection:STAT?;:CURR:PROT:STAT?").Trim();
-            string[] statuses = statusStr.Split(new char[] { ';' });
+              //  ":OUTP?;VOLTage:PROTection:STAT?;:CURR:PROT:STAT?").Trim();
+           // string[] statuses = statusStr.Split(new char[] { ';' });
             ret.Flags = DecodeFlags(
-                (OperationStatusEnum)int.Parse(statuses[0], CI),
-                (QuestionableStatusEnum)int.Parse(statuses[1], CI));
-            ret.IRange = double.Parse(statuses[2],CI);
-            ret.OutputEnabled = statuses[3] == "1";
-            ret.OVP = statuses[4] == "1";
-            ret.OCP = statuses[5] == "1";
-            // Must measure each thing individually
-            // Default is 2048 points, with 46.8us rate
-            // This is 95.8 ms; about 6 PLC in America, or 5 in other places.
-            // But, might be better to do one PLC?
-            // For CH1:
-            // Setting  time
-            //      1    30
-            //  2048/46.8    230
-            //   4096    168
-            // 
-            WriteString("TRIG:ACQ:SOUR INT;COUNT:VOLT 1;:TRIG:ACQ:COUNT:CURR 1");
-            WriteString("SENS:SWE:POIN 2048; TINT 46.8e-6");
-            WriteString("SENS:SWE:OFFS:POIN 0;:SENS:WIND HANN");
+                (OperationStatusEnum)int.Parse(Query("stat:oper:cond?"), CI),
+                (QuestionableEventEnum)int.Parse(Query(":stat:ques:cond?"), CI));
+            ret.IRange = double.Parse(Query(":sense:curr:range?"),CI);
+            ret.OutputEnabled = Query("OUTP?").Trim() == "1";
+            ret.OVP = false;
+            ret.OCP = (Query(":CURR:LIMIT:TYPE?").Trim() == "TRIP");
+            WriteString("SENSE:NPLC 1;AVERAGE 1");
             // Channel is about 30 ms
-            ret.V = Double.Parse(Query("MEAS:VOLT?"),CI);
-            ret.I = Double.Parse(Query("MEAS:CURR?"),CI);
+            // RMS is also available using MEAS:DVM:ACDC
+            if (measureDVM && HasDVM)
+                ret.DVM = QueryDouble("MEAS:DVM?")[0]; // 2048*(15.6us) => 50 ms
+            else
+                ret.DVM = Double.NaN;
+            ret.V = QueryDouble("MEAS:VOLT?")[0];
+            ret.I = QueryDouble("MEAS:CURR?")[0];
             // Ch2 is about 100 ms
             if (measureCh2 && HasOutput2) {
                 ret.V2 = Double.Parse(Query("MEAS:VOLT2?"),CI);
@@ -155,60 +127,39 @@ namespace HP663xxCtrl
                 ret.I2 = double.NaN;
             }
 
-            // RMS is also available using MEAS:DVM:ACDC
-            if(measureDVM && HasDVM)
-                ret.DVM = Double.Parse(Query("MEAS:DVM?"),CI); // 2048*(15.6us) => 50 ms
-            else
-                ret.DVM = Double.NaN;
             ret.duration = DateTime.Now.Subtract(start).TotalMilliseconds;
             return ret;
         }
-        protected StatusFlags DecodeFlags(OperationStatusEnum opFlags, QuestionableStatusEnum questFlags) {
+        protected StatusFlags DecodeFlags(OperationStatusEnum opFlags, QuestionableEventEnum questFlags) {
             StatusFlags flags = new StatusFlags();
-            flags.Calibration = opFlags.HasFlag(OperationStatusEnum.Calibration);
-            flags.CC2 = opFlags.HasFlag(OperationStatusEnum.CC2);
-            flags.CCNegative = opFlags.HasFlag(OperationStatusEnum.CCNegative);
-            flags.CCPositive = opFlags.HasFlag(OperationStatusEnum.CCPositive);
-            flags.CV = opFlags.HasFlag(OperationStatusEnum.CV);
-            flags.CV2 = opFlags.HasFlag(OperationStatusEnum.CV2);
-            flags.WaitingForTrigger = opFlags.HasFlag(OperationStatusEnum.WaitingForTrigger);
-            flags.FP_Local = questFlags.HasFlag(QuestionableStatusEnum.FP_Local);
-            flags.MeasurementOverload = questFlags.HasFlag(QuestionableStatusEnum.MeasurementOverload);
-            flags.OCP = questFlags.HasFlag(QuestionableStatusEnum.OCP);
-            flags.OpenSenseLead = questFlags.HasFlag(QuestionableStatusEnum.OpenSenseLead);
-            flags.OV = questFlags.HasFlag(QuestionableStatusEnum.OV);
-            flags.OverCurrent2 = questFlags.HasFlag(QuestionableStatusEnum.OverCurrent2);
-            flags.OverTemperature = questFlags.HasFlag(QuestionableStatusEnum.OverTemperature);
-            flags.RemoteInhibit = questFlags.HasFlag(QuestionableStatusEnum.RemoteInhibit);
-            flags.Unregulated = questFlags.HasFlag(QuestionableStatusEnum.Unregulated);
-            flags.Unregulated2 = questFlags.HasFlag(QuestionableStatusEnum.Unregulated2);
+            flags.Calibration = questFlags.HasFlag(QuestionableEventEnum.CalibrationSummary);
+            flags.CC = opFlags.HasFlag(OperationStatusEnum.CC);
+            flags.OCP = opFlags.HasFlag(OperationStatusEnum.CurrentLimitTripped);
+            flags.OverTemperature = opFlags.HasFlag(OperationStatusEnum.HeatSinkShutdown);
+            flags.MeasurementOverload = opFlags.HasFlag(OperationStatusEnum.PowerSupplyShutdown);
             return flags;
         }
         public StatusFlags GetStatusFlags()
         {
             string val = Query("stat:oper:cond?;:stat:ques:cond?");
             int[] statuses = val.Split(new char[] { ';' }).Select(x => int.Parse(x,CI)).ToArray();
-            return DecodeFlags((OperationStatusEnum)statuses[0],(QuestionableStatusEnum)statuses[1]);
+            return DecodeFlags((OperationStatusEnum)statuses[0], (QuestionableEventEnum)statuses[1]);
         }
         public OperationStatusEnum GetOperationStatus()
         {
             return (OperationStatusEnum)int.Parse(Query("STAT:OPER:COND?"),CI);
         }
-        public QuestionableStatusEnum GetQuestionableStatus()
+        public QuestionableEventEnum GetQuestionableStatus()
         {
-            return (QuestionableStatusEnum)int.Parse(Query("STAT:QUES:COND?"),CI);
+            return (QuestionableEventEnum)int.Parse(Query("STAT:QUES:COND?"), CI);
         }
 
-        string Query(string cmd)
-        {
-            WriteString(cmd);
-            return ReadString();
-        }
         public void ClearErrors()
         {
-            string msg;
-            while(!( (msg = Query("SYSTem:ERRor?")).StartsWith("+0,"))) {
-            }
+            WriteString("SYSTEM:CLEAR");
+            //string msg;
+            //while(!( (msg = Query("SYSTem:ERRor?")).StartsWith("0,"))) {
+            //}
         }
 
         public void SetupLogging(
@@ -348,7 +299,6 @@ namespace HP663xxCtrl
                 WriteString("FETCH:ARRay:CURRent?");
             else
                 WriteString("FETCH:ARRay:VOLTAGE?");
-
             float[] data = dev.FormattedIO.ReadBinaryBlockOfSingle();
             MeasArray res = new MeasArray();
             res.Mode = mode;
@@ -384,63 +334,42 @@ namespace HP663xxCtrl
         /// </summary>
         /// <param name="ovp"></param>
         public void SetOVP(double ovp) {
-            if (double.IsNaN(ovp))
-                WriteString("VOLTage:PROTection:STATe OFF");
-            else {
-                WriteString("VOLTAGE:PROTECTION " + ovp.ToString(CI));
-                WriteString("VOLTage:PROTection:STATe ON");
-            }
+            throw new NotImplementedException();
         }
         public void SetOCP(bool enabled) {
-            WriteString("CURR:PROT:STAT " + (enabled ? "1":"0"));
-        }
-        // PSC causes too much writing to non-volatile RAM. Automatically disable it, if active.
-        // People _probably_ won't depend on it....
-        void EnsurePSCOne()
-        {
-            int psc = int.Parse(Query("*PSC?"), CI);
-            if (psc == 0)
-                WriteString("*PSC 1"); ;
+            WriteString("CURR:LIMIT:TYPE " + (enabled ? "TRIP":"LIMIT"));
         }
         public static bool SupportsIDN(string idn) {
-            if (idn.Contains(",66309B,") || idn.Contains(",66319B,") ||
-                idn.Contains(",66309D,") || idn.Contains(",66319D,") ||
-                idn.Contains(",66311B,") || idn.Contains(",66321B,") ||
-                idn.Contains(",66311D,") || idn.Contains(",66321D,"))
+            if (idn.Contains("2304A,"))
                 return true;
             return false;
         }
-        public HP663xx(IMessageBasedSession visaDev)
+        public K2304(IMessageBasedSession visaDev)
         {
             dev = visaDev;
             dev.Clear(); // clear I/O buffer
+            dev.TerminationCharacter = (byte)0x0a;
+            dev.TerminationCharacterEnabled = false;
             dev.TimeoutMilliseconds = 5000; // 5 seconds
 
+            if (dev is IGpibSession) {
+                ((IGpibSession)dev).SendRemoteLocalCommand(GpibInstrumentRemoteLocalMode.AssertRen);
+            }
             WriteString("*IDN?");
             ID = ReadString().Trim();
-            if (ID.Contains(",66309B,") || ID.Contains(",66319B,")) {
-                HasDVM = false; HasOutput2 = true;
-            } else if (ID.Contains(",66309D,") || ID.Contains(",66319D,")) {
-                HasDVM = true; HasOutput2 = true;
-            } else if (ID.Contains(",66311B,") || ID.Contains(",66321B,")) {
-                HasDVM = false; HasOutput2 = false;
-            } else if (ID.Contains(",66311D,") || ID.Contains(",66321D,")) {
-                HasDVM = true; HasOutput2 = true;
+            if (ID.Contains("2304A,")) {
+                HasDVM = true; HasOutput2 = false;
             } else  {
                 dev.Dispose();
                 dev = null;
                 throw new InvalidOperationException("Not a 66309 supply!");
             }
             WriteString("STATUS:PRESET"); // Clear PTR/NTR/ENABLE register
-            EnsurePSCOne();
+
             WriteString("*CLS"); // clear status registers
-            WriteString("ABORT");
             ClearErrors();
-            WriteString("FORMAT REAL");
+            WriteString("FORMAT DREAL"); // Single seems broken; Wrong value returned for the measured current.
             WriteString("FORMat:BORDer NORMAL");
-            // Enable the detection of open sense leads
-            WriteString("SENSe:PROTection:STAT ON");
-            
         }
         public void SetCurrentDetector(CurrentDetectorEnum detector) {
             switch (detector) {
@@ -460,15 +389,30 @@ namespace HP663xxCtrl
                     break;
             }
         }
-        string ReadString() {
-            return dev.FormattedIO.ReadLine();
+
+        string Query(string cmd) {
+            WriteString(cmd);
+            return ReadString();
+        }
+        double[] QueryDouble(string cmd) {
+            WriteString(cmd);
+            return dev.FormattedIO.ReadBinaryBlockOfDouble();
         }
         void WriteString(string msg) {
             dev.FormattedIO.WriteLine(msg);
         }
+        string ReadString() {
+            // When  
+            StatusByteEnum status =(StatusByteEnum)dev.ReadStatusByte();
+            while(!status.HasFlag(StatusByteEnum.MessageAvailable)) {
+                status =(StatusByteEnum)dev.ReadStatusByte();
+            };
+            string ret = dev.FormattedIO.ReadLine();
+            return ret;
+        }
         public void Close(bool goToLocal = true)
         {
-            if (dev != null ) {
+            if (dev != null) {
                 if (goToLocal) {
                     if (dev is IGpibSession) {
                         ((IGpibSession)dev).SendRemoteLocalCommand(GpibInstrumentRemoteLocalMode.GoToLocal);

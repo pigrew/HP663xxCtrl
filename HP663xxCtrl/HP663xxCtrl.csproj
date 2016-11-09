@@ -38,6 +38,7 @@
       <HintPath>..\packages\Gu.Wpf.NumericInput.0.5.1.2\lib\net45\Gu.Wpf.NumericInput.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Ivi.Visa, Version=5.6.0.0, Culture=neutral, PublicKeyToken=a128c98f1d7717c1, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
@@ -74,7 +75,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="HP663xx.cs" />
+    <Compile Include="IFastSMU.cs" />
     <Compile Include="InstrumentWorker.cs" />
+    <Compile Include="K2304.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -108,17 +111,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <COMReference Include="VisaComLib">
-      <Guid>{DB8CBF00-D6D3-11D4-AA51-00A024EE30BD}</Guid>
-      <VersionMajor>5</VersionMajor>
-      <VersionMinor>7</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>primary</WrapperTool>
-      <Isolated>False</Isolated>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
-    </COMReference>
   </ItemGroup>
   <ItemGroup>
     <Resource Include="License-LGPL.txt" />

@@ -10,7 +10,7 @@ namespace HP663xxCtrl {
         public DateTime StartAcquisitionTime;
         public double SamplingPeriod; // Rounded version, as returned by the instrument
         public List<double[]> DataSeries = new List<double[]>();
-        public HP663xx.ProgramDetails ProgramDetails;
+        public ProgramDetails ProgramDetails;
         public InstrumentWorker.AcquireDetails AcqDetails;
 
     }

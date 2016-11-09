@@ -75,22 +75,22 @@ namespace HP663xxCtrl {
                     DisconnectButton.IsEnabled = false;
                 }));
             };
-            InstWorker.NewState += delegate(object sender2, HP663xx.InstrumentState state)
+            InstWorker.NewState += delegate(object sender2, InstrumentState state)
             {
                 Dispatcher.BeginInvoke((Action)(() =>
                 {
                     UpdateStateLabels(sender2, state);
                 }));
             };
-            InstWorker.DataAcquired += delegate(object sender2, HP663xx.MeasArray measArray)
+            InstWorker.DataAcquired += delegate(object sender2, MeasArray measArray)
             {
                 Dispatcher.BeginInvoke((Action)(() => { HandleDataAcquired(sender2, measArray); }));
             };
-            InstWorker.ProgramDetailsReadback += delegate(object sender2, HP663xx.ProgramDetails details)
+            InstWorker.ProgramDetailsReadback += delegate(object sender2, ProgramDetails details)
             {
                 Dispatcher.BeginInvoke((Action)(() => { HandleProgramDetailsReadback(sender2, details); }));
             };
-            InstWorker.LogerDatapointAcquired += delegate(object sender2, HP663xx.LoggerDatapoint point)
+            InstWorker.LogerDatapointAcquired += delegate(object sender2, LoggerDatapoint point)
             {
                 Dispatcher.BeginInvoke((Action)(() => { HandleLogDatapoint(sender2, point); }));
             };
@@ -137,7 +137,7 @@ namespace HP663xxCtrl {
             ConnectionStatusBarItem.Content = "DISCONNECTING";
             InstWorker.RequestShutdown();
         }
-        private void UpdateStateLabels(object sender, HP663xx.InstrumentState state) {
+        private void UpdateStateLabels(object sender, InstrumentState state) {
             NumberFormatInfo nfi = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
             nfi.NumberNegativePattern = 1;
             Ch1VLabel.Text = state.V.ToString("N3",nfi).PadLeft(7) + " V";
@@ -147,17 +147,19 @@ namespace HP663xxCtrl {
                 Ch1ILabel.Text = (state.I * 1000).ToString("N3",nfi).PadLeft(6) + " mA";
             }
             Ch1StatusLabel.Text =
-                 ((state.Flags.Questionable.HasFlag(HP663xx.QuestionableStatusEnum.Unregulated)) ? "UNR" : "  ") +
+                 ((state.Flags.Unregulated) ? "UNR" : "  ") +
                 " " +
                 (state.OVP? "OVP" : "   ") +
                 " " +
                 (state.OCP ? "OCP" : "   ") +
                 " " +
-                ((state.Flags.Operation.HasFlag(HP663xx.OperationStatusEnum.CV)) ? "CV" : "  ") +
+                (state.Flags.CV ? "CV" : "  ") +
                 " " +
                 (
-                    state.Flags.Operation.HasFlag(HP663xx.OperationStatusEnum.CCPositive) ? "CC+" : (
-                       (state.Flags.Operation.HasFlag(HP663xx.OperationStatusEnum.CCNegative) ? "CC-" : "   ")
+                    state.Flags.CCPositive ? "CC+" : (
+                    (state.Flags.CCNegative ? "CC-" : (
+                    state.Flags.CC ? "CC " : "   ")
+                    )
                     )
                 );
             if (!double.IsNaN(state.V2)) {
@@ -168,19 +170,19 @@ namespace HP663xxCtrl {
                 Ch2ILabel.Text = "--.----" + "  -";
             }
             Ch2StatusLabel.Text =
-                 ((state.Flags.Questionable.HasFlag(HP663xx.QuestionableStatusEnum.Unregulated2)) ? "UNR" : "  ") +
+                 (state.Flags.Unregulated2 ? "UNR" : "  ") +
                 " " +
                 (state.OVP ? "   " : "   ") + // CH2 doesn't have OVP???
                 " " +
                 (state.OCP ? "OCP" : "   ") +
                 " " +
-                ((state.Flags.Operation.HasFlag(HP663xx.OperationStatusEnum.CV2)) ? "CV" : "  ") +
+                ((state.Flags.CV2) ? "CV" : "  ") +
                 " " +
-                (state.Flags.Operation.HasFlag(HP663xx.OperationStatusEnum.CC2) ? "CC " : "   ");
+                (state.Flags.CC2 ? "CC " : "   ");
 
             DVMVLabel.Text = state.DVM.ToString("N3",nfi);
         }
-        private void HandleDataAcquired(object sender, HP663xx.MeasArray result) {
+        private void HandleDataAcquired(object sender, MeasArray result) {
             // Add data to the data record, and overwrite the sampling period (it should be the same
             // for all datapoints)
             AcqDataRecord.SamplingPeriod = result.TimeInterval;
@@ -202,7 +204,7 @@ namespace HP663xxCtrl {
         private void OnMenuItem_Exit(object sender, RoutedEventArgs e) {
             this.Close();
         }
-        void HandleProgramDetailsReadback(object sender, HP663xx.ProgramDetails details) {
+        void HandleProgramDetailsReadback(object sender, ProgramDetails details) {
             EnableOutputCheckbox.IsChecked = details.Enabled;
             OCPCheckbox.IsChecked = details.OCP;
             VM.V1 = details.V1;
@@ -225,12 +227,12 @@ namespace HP663xxCtrl {
                 CH2ITextBox.MaxValue = details.MaxI2;
             }
             switch (details.Range) {
-                case HP663xx.CurrentRanges.TWENTY_mA: CurrentRangeComboBox.SelectedIndex = 0; break;
+                case CurrentRanges.TWENTY_mA: CurrentRangeComboBox.SelectedIndex = 0; break;
                 default: CurrentRangeComboBox.SelectedIndex = 1; break;
             }
             switch (details.Detector) {
-                case HP663xx.CurrentDetectorEnum.DC: ACDCDetectorComboBox.SelectedIndex = 0; break;
-                case HP663xx.CurrentDetectorEnum.ACDC: ACDCDetectorComboBox.SelectedIndex = 1; break;
+                case CurrentDetectorEnum.DC: ACDCDetectorComboBox.SelectedIndex = 0; break;
+                case CurrentDetectorEnum.ACDC: ACDCDetectorComboBox.SelectedIndex = 1; break;
             }
         }
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
@@ -238,15 +240,15 @@ namespace HP663xxCtrl {
                 ComboBoxItem item = (ComboBoxItem)e.AddedItems[0];
                 switch ((string)item.Tag) {
                     case "LOW":
-                        InstWorker.RequestIRange(HP663xx.CurrentRanges.TWENTY_mA); break;
+                        InstWorker.RequestIRange(CurrentRanges.TWENTY_mA); break;
                     case "HIGH":
-                        InstWorker.RequestIRange(HP663xx.CurrentRanges.HIGH); break;
+                        InstWorker.RequestIRange(CurrentRanges.HIGH); break;
                     case "AUTO":
-                        InstWorker.RequestIRange(HP663xx.CurrentRanges.HIGH); break;
+                        InstWorker.RequestIRange(CurrentRanges.HIGH); break;
                 }
             }
         }
-        void HandleLogDatapoint(object sender, HP663xx.LoggerDatapoint dp) {
+        void HandleLogDatapoint(object sender, LoggerDatapoint dp) {
             if(!double.IsNaN(dp.Min))
                 zgc.GraphPane.CurveList[0].AddPoint(
                     dp.time.Subtract(LogStartTime).TotalSeconds,
@@ -287,15 +289,15 @@ namespace HP663xxCtrl {
                 zgc.GraphPane.CurveList[3].IsVisible = LoggerRMSCheckBox.IsChecked.Value;
                 ZedgraphLoggingMode = true;
 
-                HP663xx.SenseModeEnum mode;
+                SenseModeEnum mode;
                 if (LogVoltageRadioButton.IsChecked.Value) {
-                    mode = HP663xx.SenseModeEnum.VOLTAGE;
+                    mode = SenseModeEnum.VOLTAGE;
                     zgc.GraphPane.YAxis.Title.Text = "Voltage (V)";
                 } else if (LogCurrentRadioButton.IsChecked.Value) {
-                    mode = HP663xx.SenseModeEnum.CURRENT;
+                    mode = SenseModeEnum.CURRENT;
                     zgc.GraphPane.YAxis.Title.Text = "Current (A)";
                 } else {
-                    mode = HP663xx.SenseModeEnum.DVM;
+                    mode = SenseModeEnum.DVM;
                     zgc.GraphPane.YAxis.Title.Text = "Voltage (V)";
                 }
                 InstWorker.RequestLog(mode);
@@ -336,23 +338,23 @@ namespace HP663xxCtrl {
                 details.TriggerHysteresis = VM.TriggerHysteresis;
 
                 if (AcqVoltageRadioButton.IsChecked.Value) {
-                    details.SenseMode = HP663xx.SenseModeEnum.VOLTAGE;
+                    details.SenseMode = SenseModeEnum.VOLTAGE;
                     zgc.GraphPane.YAxis.Title.Text = "Voltage (V)";
                 } else if (AcqCurrentRadioButton.IsChecked.Value) {
-                    details.SenseMode = HP663xx.SenseModeEnum.CURRENT;
+                    details.SenseMode = SenseModeEnum.CURRENT;
                     zgc.GraphPane.YAxis.Title.Text = "Current (A)";
                 } else {
-                    details.SenseMode = HP663xx.SenseModeEnum.DVM;
+                    details.SenseMode = SenseModeEnum.DVM;
                     zgc.GraphPane.YAxis.Title.Text = "Voltage (V)";
                 }
 
                 details.SegmentCount = VM.AcqSegments;
 
                 switch ((string)((ComboBoxItem)TriggerComboBox.SelectedItem).Tag) {
-                    case "IMMED": details.triggerEdge = HP663xx.TriggerSlopeEnum.Immediate; break;
-                    case "POS": details.triggerEdge = HP663xx.TriggerSlopeEnum.Positive; break;
-                    case "NEG": details.triggerEdge = HP663xx.TriggerSlopeEnum.Negative; break;
-                    case "EITHER": details.triggerEdge = HP663xx.TriggerSlopeEnum.Either; break;
+                    case "IMMED": details.triggerEdge = TriggerSlopeEnum.Immediate; break;
+                    case "POS": details.triggerEdge = TriggerSlopeEnum.Positive; break;
+                    case "NEG": details.triggerEdge = TriggerSlopeEnum.Negative; break;
+                    case "EITHER": details.triggerEdge = TriggerSlopeEnum.Either; break;
                     default: throw new Exception();
                 }
                 AcqDataRecord = InstWorker.RequestAcquire(details);
@@ -431,7 +433,7 @@ namespace HP663xxCtrl {
         }
 
         private void ApplyProgramButton_Click(object sender, RoutedEventArgs e) {
-            HP663xx.ProgramDetails details = new HP663xx.ProgramDetails();
+            ProgramDetails details = new ProgramDetails();
             string ParseError = "";
             var blah = OVPLevelTextBox;
             if (InstWorker == null)
@@ -501,8 +503,8 @@ namespace HP663xxCtrl {
         private void ACDCDetectorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
             if (InstWorker != null) {
                 switch ((string)((ComboBoxItem)e.AddedItems[0]).Tag) {
-                    case "DC": InstWorker.RequestACDCDetector(HP663xx.CurrentDetectorEnum.DC); break;
-                    case "ACDC": InstWorker.RequestACDCDetector(HP663xx.CurrentDetectorEnum.ACDC); break;
+                    case "DC": InstWorker.RequestACDCDetector(CurrentDetectorEnum.DC); break;
+                    case "ACDC": InstWorker.RequestACDCDetector(CurrentDetectorEnum.ACDC); break;
                 }
 
             }

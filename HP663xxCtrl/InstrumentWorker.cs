@@ -5,10 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Ivi.Visa;
 
 namespace HP663xxCtrl {
     public class InstrumentWorker {
-        HP663xx dev = null;
+        IFastSMU dev = null;
         public string VisaAddress {
            get ; private set;
         }
@@ -18,7 +19,7 @@ namespace HP663xxCtrl {
 
         volatile bool StopRequested = false;
         public volatile bool StopAcquireRequested = false;
-        HP663xx.ProgramDetails LastProgramDetails;
+        ProgramDetails LastProgramDetails;
 
         public enum StateEnum {
             Disconnected,
@@ -40,10 +41,10 @@ namespace HP663xxCtrl {
         public struct AcquireDetails {
             public int NumPoints;
             public double Interval;
-            public HP663xx.SenseModeEnum SenseMode;
+            public SenseModeEnum SenseMode;
             public double Level;
             public double TriggerHysteresis;
-            public HP663xx.TriggerSlopeEnum triggerEdge;
+            public TriggerSlopeEnum triggerEdge;
             public int SegmentCount;
             public int SampleOffset;
         }
@@ -57,16 +58,25 @@ namespace HP663xxCtrl {
             EventQueue = new BlockingCollection<Command>(new ConcurrentQueue<Command>());
         }
         public event EventHandler WorkerDone;
-        public event EventHandler<HP663xx.InstrumentState> NewState;
+        public event EventHandler<InstrumentState> NewState;
         public event EventHandler<StateEnum> StateChanged;
-        public event EventHandler<HP663xx.ProgramDetails> ProgramDetailsReadback;
+        public event EventHandler<ProgramDetails> ProgramDetailsReadback;
         DateTime LastRefresh;
         public void ThreadMain() {
-
-            dev = new HP663xx(VisaAddress);
+            // have to open the device to find the ID 
+            IMessageBasedSession visaDev = (IMessageBasedSession)GlobalResourceManager.Open(VisaAddress);
+            visaDev.Clear();
+            visaDev.FormattedIO.WriteLine("*IDN?");
+            string idn = visaDev.FormattedIO.ReadLine();
+            if (K2304.SupportsIDN(idn))
+                dev = new K2304(visaDev);
+            else if (HP663xx.SupportsIDN(idn))
+                dev = new HP663xx(visaDev);
+            else
+                throw new Exception("unsupported device");
             if (StateChanged != null) StateChanged(this, StateEnum.Connected);
             if (ProgramDetailsReadback != null) {
-                HP663xx.ProgramDetails progDetails = dev.ReadProgramDetails();
+                ProgramDetails progDetails = dev.ReadProgramDetails();
                 LastProgramDetails = progDetails;
                 ProgramDetailsReadback(this, LastProgramDetails);
             }
@@ -79,22 +89,22 @@ namespace HP663xxCtrl {
                 while (EventQueue.TryTake(out cmd, timeout<10?30:timeout)) {
                     switch (cmd.cmd) {
                         case CommandEnum.IRange:
-                            DoSetCurrentRange((HP663xx.CurrentRanges)cmd.arg);
+                            DoSetCurrentRange((CurrentRanges)cmd.arg);
                             break;
                         case CommandEnum.Acquire:
                             DoAcquisition((AcquireDetails)cmd.arg);
                             break;
                         case CommandEnum.Log:
-                            DoLog((HP663xx.SenseModeEnum)cmd.arg);
+                            DoLog((SenseModeEnum)cmd.arg);
                             break;
                         case CommandEnum.Program:
-                            DoProgram((HP663xx.ProgramDetails)cmd.arg);
+                            DoProgram((ProgramDetails)cmd.arg);
                             break;
                         case CommandEnum.ClearProtection:
                             DoClearProtection();
                             break;
                         case CommandEnum.SetACDCDetector:
-                            DoACDCDetector((HP663xx.CurrentDetectorEnum)cmd.arg);break;
+                            DoACDCDetector((CurrentDetectorEnum)cmd.arg);break;
                         default:
                             throw new Exception("Unhandled command in InstrumentWorker");
                     }
@@ -112,12 +122,12 @@ namespace HP663xxCtrl {
             if(WorkerDone!=null)
                 WorkerDone.Invoke(this,null);
         }
-        public event EventHandler<HP663xx.MeasArray> DataAcquired;
-        void DoSetCurrentRange(HP663xx.CurrentRanges range) {
+        public event EventHandler<MeasArray> DataAcquired;
+        void DoSetCurrentRange(CurrentRanges range) {
             dev.SetCurrentRange(range);
             LastProgramDetails.Range = range;
         }
-        public void RequestIRange(HP663xx.CurrentRanges range) {
+        public void RequestIRange(CurrentRanges range) {
             EventQueue.Add(new Command() { cmd = CommandEnum.IRange, arg = range });
         }
         // Must set StopAcquireRequested to false before starting acquisition
@@ -127,7 +137,7 @@ namespace HP663xxCtrl {
             int remaining = arg.SegmentCount;
             while (remaining > 0 && !StopRequested && !StopAcquireRequested) {
                 int count = 0;
-                if (arg.triggerEdge == HP663xx.TriggerSlopeEnum.Immediate)
+                if (arg.triggerEdge == TriggerSlopeEnum.Immediate)
                     count = 1;
                 else
                     count = Math.Min(remaining, 4096 / arg.NumPoints);
@@ -178,8 +188,8 @@ namespace HP663xxCtrl {
             });
             return data;
         }
-        public event EventHandler<HP663xx.LoggerDatapoint> LogerDatapointAcquired;
-        void DoLog(HP663xx.SenseModeEnum mode) {
+        public event EventHandler<LoggerDatapoint> LogerDatapointAcquired;
+        void DoLog(SenseModeEnum mode) {
             if (StateChanged != null) StateChanged(this, StateEnum.Measuring);
             dev.SetupLogging(mode);
 
@@ -196,7 +206,7 @@ namespace HP663xxCtrl {
             }
             if (StateChanged != null) StateChanged(this, StateEnum.Connected);
         }
-        public void RequestLog(HP663xx.SenseModeEnum mode) {
+        public void RequestLog(SenseModeEnum mode) {
             if (StopAcquireRequested == true)
                 return;
             EventQueue.Add(new Command() {
@@ -204,12 +214,13 @@ namespace HP663xxCtrl {
                 arg = mode
             });
         }
-        void DoProgram(HP663xx.ProgramDetails details) {
+        void DoProgram(ProgramDetails details) {
             if (!details.Enabled) {
                 dev.EnableOutput(details.Enabled);
                 dev.SetOCP(details.OCP);
             }
-            dev.SetOVP(details.OVP? details.OVPVal:double.NaN);
+            if(dev.HasOVP)
+                dev.SetOVP(details.OVP? details.OVPVal:double.NaN);
             dev.SetIV(1, details.V1, details.I1);
             dev.SetIV(2, details.V2, details.I2);
             if (details.Enabled) {
@@ -228,7 +239,7 @@ namespace HP663xxCtrl {
             LastProgramDetails.OCP = details.OCP;
         }
 
-        public void RequestProgram(HP663xx.ProgramDetails details) {
+        public void RequestProgram(ProgramDetails details) {
             EventQueue.Add(new Command() {
                 cmd = CommandEnum.Program,
                 arg = details
@@ -246,11 +257,11 @@ namespace HP663xxCtrl {
         public void RequestShutdown() {
             StopRequested = true;
         }
-        void DoACDCDetector(HP663xx.CurrentDetectorEnum detector) {
+        void DoACDCDetector(CurrentDetectorEnum detector) {
             dev.SetCurrentDetector(detector);
             LastProgramDetails.Detector = detector;
         }
-        public void RequestACDCDetector(HP663xx.CurrentDetectorEnum detector) {
+        public void RequestACDCDetector(CurrentDetectorEnum detector) {
             EventQueue.Add(new Command() {
                 cmd = CommandEnum.SetACDCDetector,
                 arg = detector
