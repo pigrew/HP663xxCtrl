@@ -262,7 +262,7 @@
                                 <RadioButton GroupName="LogSenseMode" x:Name="LogDVMRadioButton" Tag="DVM" Content="DVM "/>
                             </StackPanel>
                             <Label Grid.Row="1" Grid.Column="0" Content="Interval: "/>
-                            <numericInput:DoubleBox MinValue="0" Grid.Row="1" Grid.Column="1"/>
+                            <numericInput:DoubleBox x:Name="LogInterval" MinValue="0" Grid.Row="1" Grid.Column="1"/>
                         </Grid>
                     </GroupBox>
                     <GroupBox Header="Display">

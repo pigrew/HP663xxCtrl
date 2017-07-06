@@ -95,7 +95,7 @@ namespace HP663xxCtrl {
                             DoAcquisition((AcquireDetails)cmd.arg);
                             break;
                         case CommandEnum.Log:
-                            DoLog((SenseModeEnum)cmd.arg);
+                            DoLog((SenseModeEnum)((object[])cmd.arg)[0],(double)((object[])cmd.arg)[1]);
                             break;
                         case CommandEnum.Program:
                             DoProgram((ProgramDetails)cmd.arg);
@@ -189,9 +189,9 @@ namespace HP663xxCtrl {
             return data;
         }
         public event EventHandler<LoggerDatapoint> LogerDatapointAcquired;
-        void DoLog(SenseModeEnum mode) {
+        void DoLog(SenseModeEnum mode, double interval) {
             if (StateChanged != null) StateChanged(this, StateEnum.Measuring);
-            dev.SetupLogging(mode);
+            dev.SetupLogging(mode, interval);
 
             while (!StopRequested && !StopAcquireRequested) {
 
@@ -206,12 +206,12 @@ namespace HP663xxCtrl {
             }
             if (StateChanged != null) StateChanged(this, StateEnum.Connected);
         }
-        public void RequestLog(SenseModeEnum mode) {
+        public void RequestLog(SenseModeEnum mode, double interval) {
             if (StopAcquireRequested == true)
                 return;
             EventQueue.Add(new Command() {
                 cmd = CommandEnum.Log,
-                arg = mode
+                arg = new object[] {mode,interval}
             });
         }
         void DoProgram(ProgramDetails details) {
@@ -222,7 +222,8 @@ namespace HP663xxCtrl {
             if(dev.HasOVP)
                 dev.SetOVP(details.OVP? details.OVPVal:double.NaN);
             dev.SetIV(1, details.V1, details.I1);
-            dev.SetIV(2, details.V2, details.I2);
+            if(details.HasOutput2)
+                dev.SetIV(2, details.V2, details.I2);
             if (details.Enabled) {
                 dev.SetOCP(details.OCP);
                 dev.EnableOutput(details.Enabled);

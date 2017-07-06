@@ -295,7 +295,9 @@ namespace HP663xxCtrl {
                     mode = SenseModeEnum.DVM;
                     zgc.GraphPane.YAxis.Title.Text = "Voltage (V)";
                 }
-                InstWorker.RequestLog(mode);
+                double interval = 0;
+                Double.TryParse(LogInterval.Text, out interval);
+                InstWorker.RequestLog(mode, interval);
             }
         }
 

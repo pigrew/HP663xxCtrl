@@ -59,6 +59,7 @@ namespace HP663xxCtrl {
             OperationStatusSummary = 128
         }
 
+        private double LFrequency;
         public ProgramDetails ReadProgramDetails() {
             ProgramDetails details = new ProgramDetails() {
                 OVP =false, // no OVP on this unit
@@ -153,12 +154,17 @@ namespace HP663xxCtrl {
         }
 
         public void SetupLogging(
-            SenseModeEnum mode
+            SenseModeEnum mode, double interval
             ) {
-            int numPoints = 4096;
-            double interval = 15.6e-6;
             string modeString;
-            int triggerOffset = 0;
+            double nplc = (interval - 400e-6) * 0.9;
+            nplc = nplc / (1 / LFrequency);
+            if (nplc < 0.01)
+                nplc = 0.01;
+            else if (nplc > 10)
+                nplc = 10.0;
+            else if(nplc > 1)
+                nplc = Math.Floor(nplc);
 
             if (mode == SenseModeEnum.DVM && !HasDVM)
                 throw new Exception();
@@ -170,40 +176,37 @@ namespace HP663xxCtrl {
             }
             // Immediate always has a trigger count of 1
             WriteString("SENSe:FUNCtion \"" + modeString + "\"");
-            WriteString("SENSe:SWEEP:POINTS " + numPoints.ToString(CI) + "; " +
-                "TINTerval " + interval.ToString(CI) + ";" +
-                "OFFSET:POINTS " + triggerOffset.ToString(CI));
-            WriteString("TRIG:ACQ:SOURCE BUS");
-            WriteString("ABORT;*WAI");
-            //WriteString("INIT:NAME ACQ;:TRIG:ACQ");
+            WriteString("SENS:NPLC " + nplc.ToString());
 
             Query("*OPC?");
         }
         public LoggerDatapoint MeasureLoggingPoint( SenseModeEnum mode) {
             LoggerDatapoint ret = new LoggerDatapoint();
-            string rsp;
-            string[] parts;
+            double[] rsp;
             switch(mode) {
                 case SenseModeEnum.CURRENT:
-                    rsp = Query("MEAS:CURR?;:FETCH:CURR:MIN?;MAX?;ACDC?").Trim();
-                    parts = rsp.Split(new char[] { ';' });
-                    ret.Mean = double.Parse(parts[0], CI);
-                    ret.Min = double.Parse(parts[1], CI);
+                    rsp = QueryDouble("MEAS:CURR?");
+                   //parts = rsp.Split(new char[] { ';' });
+                    ret.Mean = rsp[0];
+                    // K2304A doesn't support these other things
+                    ret.Mean = ret.Max = ret.RMS = ret.Mean;
+                   /* ret.Min = double.Parse(parts[1], CI);
                     ret.Max = double.Parse(parts[2], CI);
-                    ret.RMS = double.Parse(parts[3], CI);
+                    ret.RMS = double.Parse(parts[3], CI);*/
                     break;
                 case SenseModeEnum.VOLTAGE:
-                    rsp = Query("MEAS:VOLT?;:FETCH:VOLT:MIN?;MAX?;ACDC?").Trim();
-                    parts = rsp.Split(new char[] { ';' });
-                    ret.Mean = double.Parse(parts[0], CI);
-                    ret.Min = double.Parse(parts[1], CI);
-                    ret.Max = double.Parse(parts[2],CI);
-                    ret.RMS = double.Parse(parts[3],CI);
+                    rsp = QueryDouble("MEAS:VOLT?");
+                    ret.Mean = rsp[0];
+                   /* ret.Min = double.Parse(parts[1], CI);
+                    ret.Max = double.Parse(parts[2], CI);
+                    ret.RMS = double.Parse(parts[3], CI);*/
                     break;
                 case SenseModeEnum.DVM:
-                    rsp = Query("MEAS:DVM?").Trim();
-                    parts = rsp.Split(new char[] { ';' });
-                    ret.Mean = double.Parse(parts[0], CI);
+                    rsp = QueryDouble("MEAS:DVM?");
+                    ret.Mean = rsp[0];
+                    /* ret.Min = double.Parse(parts[1], CI);
+                     ret.Max = double.Parse(parts[2], CI);
+                     ret.RMS = double.Parse(parts[3], CI);*/
                     break;
             }
             ret.time = DateTime.Now;
@@ -322,7 +325,7 @@ namespace HP663xxCtrl {
             WriteString("VOLT" +
                 (channel == 2 ? "2 " : " ") + voltage.ToString(CI));
             WriteString("CURR" +
-                (channel == 2 ? "2 " : " ") + current.ToString(CI) 
+                (channel == 2 ? "2" : "") + ":LIMIT " + current.ToString(CI) 
                 );
         }
         /// <summary>
@@ -364,8 +367,9 @@ namespace HP663xxCtrl {
 
             WriteString("*CLS"); // clear status registers
             ClearErrors();
-            WriteString("FORMAT DREAL"); // Single seems broken; Wrong value returned for the measured current.
-            WriteString("FORMat:BORDer NORMAL");
+            WriteString("FORMAT ASCII"); // Single seems broken, so does double?!
+            //WriteString("FORMat:BORDer NORMAL");
+            LFrequency = Double.Parse(Query("SYSTEM:LFRequency?"));
         }
         public void SetCurrentDetector(CurrentDetectorEnum detector) {
             switch (detector) {
@@ -391,8 +395,11 @@ namespace HP663xxCtrl {
             return ReadString();
         }
         double[] QueryDouble(string cmd) {
-            WriteString(cmd);
-            return dev.FormattedIO.ReadBinaryBlockOfDouble();
+            //WriteString(cmd);
+            return Query(cmd).Trim()
+                .Split(new char[]{','})
+                .Select(x => double.Parse(x)).ToArray();
+            //return dev.FormattedIO.ReadBinaryBlockOfDouble();
         }
         void WriteString(string msg) {
             dev.FormattedIO.WriteLine(msg);

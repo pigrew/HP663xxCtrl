@@ -202,10 +202,11 @@ namespace HP663xxCtrl
         }
 
         public void SetupLogging(
-            SenseModeEnum mode
+            SenseModeEnum mode,
+            double interval
             ) {
             int numPoints = 4096;
-            double interval = 15.6e-6;
+            double AcqInterval = 15.6e-6;
             string modeString;
             int triggerOffset = 0;
 
@@ -220,7 +221,7 @@ namespace HP663xxCtrl
             // Immediate always has a trigger count of 1
             WriteString("SENSe:FUNCtion \"" + modeString + "\"");
             WriteString("SENSe:SWEEP:POINTS " + numPoints.ToString(CI) + "; " +
-                "TINTerval " + interval.ToString(CI) + ";" +
+                "TINTerval " + AcqInterval.ToString(CI) + ";" +
                 "OFFSET:POINTS " + triggerOffset.ToString(CI));
             WriteString("TRIG:ACQ:SOURCE BUS");
             WriteString("ABORT;*WAI");

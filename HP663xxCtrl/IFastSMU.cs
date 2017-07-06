@@ -93,7 +93,8 @@ namespace HP663xxCtrl {
         // Measurements
         void AbortMeasurement();
         void SetupLogging(
-            SenseModeEnum mode
+            SenseModeEnum mode, 
+            double interval
             );
         void StartTransientMeasurement(
             SenseModeEnum mode,
