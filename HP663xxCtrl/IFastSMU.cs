@@ -23,11 +23,6 @@ namespace HP663xxCtrl {
         DC,
         ACDC
     }
-    public enum CurrentRanges {
-        TWENTY_mA,
-        MEDIUM,
-        HIGH
-    };
     public enum SenseModeEnum {
         CURRENT,
         VOLTAGE,
@@ -70,11 +65,12 @@ namespace HP663xxCtrl {
         public double OVPVal;
         public double V1, I1, V2, I2;
 
-        // And other things that are not actually used during programming
+        // And other things that are not actually used during programming, and is implicit to the unit
         public bool HasDVM, HasOutput2;
         public string ID;
         public double MaxV1, MaxI1, MaxV2, MaxI2;
-        public CurrentRanges Range;
+        public double I1Range;
+        public double[] I1Ranges;
         public CurrentDetectorEnum Detector;
     }
     interface IFastSMU {
@@ -87,7 +83,7 @@ namespace HP663xxCtrl {
         void SetOutputCompensation(OutputCompensationEnum comp);
         void SetCurrentDetector(CurrentDetectorEnum detector);
         void ClearProtection();
-        void SetCurrentRange(CurrentRanges range);
+        void SetCurrentRange(double range);
         void SetIV(int channel, double voltage, double current);
         void SetOVP(double ovp);
         void EnableOutput(bool enabled);

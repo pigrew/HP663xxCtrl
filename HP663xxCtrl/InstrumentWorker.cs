@@ -89,7 +89,7 @@ namespace HP663xxCtrl {
                 while (EventQueue.TryTake(out cmd, timeout<10?30:timeout)) {
                     switch (cmd.cmd) {
                         case CommandEnum.IRange:
-                            DoSetCurrentRange((CurrentRanges)cmd.arg);
+                            DoSetCurrentRange((double)cmd.arg);
                             break;
                         case CommandEnum.Acquire:
                             DoAcquisition((AcquireDetails)cmd.arg);
@@ -123,11 +123,11 @@ namespace HP663xxCtrl {
                 WorkerDone.Invoke(this,null);
         }
         public event EventHandler<MeasArray> DataAcquired;
-        void DoSetCurrentRange(CurrentRanges range) {
+        void DoSetCurrentRange(double range) {
             dev.SetCurrentRange(range);
-            LastProgramDetails.Range = range;
+            LastProgramDetails.I1Range = range;
         }
-        public void RequestIRange(CurrentRanges range) {
+        public void RequestIRange(double range) {
             EventQueue.Add(new Command() { cmd = CommandEnum.IRange, arg = range });
         }
         // Must set StopAcquireRequested to false before starting acquisition

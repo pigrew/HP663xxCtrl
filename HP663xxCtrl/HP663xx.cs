@@ -16,7 +16,7 @@ namespace HP663xxCtrl
         public bool HasDVM { get; private set; }
         public bool HasOutput2 { get; private set; }
         public bool HasOVP { get { return true; } }
-
+        double[] I1Ranges;
 
         string ID;
         public void Reset()
@@ -28,13 +28,8 @@ namespace HP663xxCtrl
             WriteString("*ESE 0");
         }
 
-        public void SetCurrentRange(CurrentRanges range) {
-            switch (range)
-            {
-                case CurrentRanges.TWENTY_mA: WriteString("SENS:CURR:RANG MIN"); break;
-                case CurrentRanges.MEDIUM: WriteString("SENS:CURR:RANG 0.9"); break;
-                case CurrentRanges.HIGH: WriteString("SENS:CURR:RANG MAX"); break;
-            }
+        public void SetCurrentRange(double range) {
+            WriteString("SENS:CURR:RANG " + range.ToString(CI));
         }
         [Flags]
         public enum OperationStatusEnum
@@ -85,12 +80,13 @@ namespace HP663xxCtrl
                 OVPVal = double.Parse(parts[4],CI),
                 OCP = (parts[5] == "1"),
                 V2 = HasOutput2? double.Parse(parts[6],CI):double.NaN,
-                I2 = HasOutput2 ? double.Parse(parts[7],CI) : double.NaN,
+                I2 = HasOutput2 ? double.Parse(parts[7], CI) : double.NaN,
                 HasDVM = HasDVM,
                 HasOutput2 = HasOutput2,
                 ID = ID
             };
             // Maximums
+            details.I1Ranges = new double[] { 0.02, 5 };
             parts = Query("VOLT? MAX; CURR? MAX").Trim().Split(new char[] {';'});
             details.MaxV1 = double.Parse(parts[0],CI);
             details.MaxI1 = double.Parse(parts[1],CI);
@@ -100,13 +96,7 @@ namespace HP663xxCtrl
                 details.MaxI2 = double.Parse(parts[1],CI);
 
             }
-            double range = Double.Parse(Query(":sense:curr:range?").Trim(),CI);
-            if (range < 0.03)
-                details.Range = CurrentRanges.TWENTY_mA;
-            else if (range < 1.1)
-                details.Range = CurrentRanges.MEDIUM;
-            else
-                details.Range = CurrentRanges.HIGH;
+            details.I1Range = Double.Parse(Query(":sense:curr:range?").Trim(),CI);
 
             string detector = Query("SENSE:CURR:DET?").Trim();
             switch (detector) {
@@ -429,8 +419,11 @@ namespace HP663xxCtrl
             } else  {
                 dev.Dispose();
                 dev = null;
-                throw new InvalidOperationException("Not a 66309 supply!");
+                throw new InvalidOperationException("Not a known 663xx supply!");
             }
+            I1Ranges = new double[] { 0.02, 3 };
+            if (ID.Contains(",66319") || ID.Contains(",66319"))
+                I1Ranges = new double[] { 0.02, 1, 3 };
             WriteString("STATUS:PRESET"); // Clear PTR/NTR/ENABLE register
             EnsurePSCOne();
             WriteString("*CLS"); // clear status registers

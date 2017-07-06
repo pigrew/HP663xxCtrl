@@ -213,6 +213,7 @@ namespace HP663xxCtrl {
             VM.I2 = details.I2;
             VM.HasChannel2 = details.HasOutput2;
             VM.HasDVM = details.HasDVM;
+            VM.I1Ranges = details.I1Ranges;
             
             OVPCheckbox.IsChecked = details.OVP;
             VM.OVPLevel = details.OVPVal;
@@ -226,9 +227,10 @@ namespace HP663xxCtrl {
                 CH2VTextBox.MaxValue = details.MaxV2;
                 CH2ITextBox.MaxValue = details.MaxI2;
             }
-            switch (details.Range) {
-                case CurrentRanges.TWENTY_mA: CurrentRangeComboBox.SelectedIndex = 0; break;
-                default: CurrentRangeComboBox.SelectedIndex = 1; break;
+
+             for(int i=0; i< CurrentRangeComboBox.Items.Count; i++) {
+                 if(details.I1Range ==  (double)CurrentRangeComboBox.Items[i])
+                     CurrentRangeComboBox.SelectedIndex = i;
             }
             switch (details.Detector) {
                 case CurrentDetectorEnum.DC: ACDCDetectorComboBox.SelectedIndex = 0; break;
@@ -238,16 +240,9 @@ namespace HP663xxCtrl {
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
             if (InstWorker != null) {
                 ComboBoxItem item = (ComboBoxItem)e.AddedItems[0];
-                switch ((string)item.Tag) {
-                    case "LOW":
-                        InstWorker.RequestIRange(CurrentRanges.TWENTY_mA); break;
-                    case "HIGH":
-                        InstWorker.RequestIRange(CurrentRanges.HIGH); break;
-                    case "AUTO":
-                        InstWorker.RequestIRange(CurrentRanges.HIGH); break;
+                InstWorker.RequestIRange((double)item.Tag);
                 }
             }
-        }
         void HandleLogDatapoint(object sender, LoggerDatapoint dp) {
             if(!double.IsNaN(dp.Min))
                 zgc.GraphPane.CurveList[0].AddPoint(
@@ -394,7 +389,7 @@ namespace HP663xxCtrl {
                     sw.WriteLine("OCP" + sep + AcqDataRecord.ProgramDetails.OCP.ToString());
                     sw.WriteLine("OVP" + sep + (AcqDataRecord.ProgramDetails.OVP ?
                         AcqDataRecord.ProgramDetails.OVPVal.ToString() : "False"));
-                    sw.WriteLine("CurrentRange" + sep + AcqDataRecord.ProgramDetails.Range.ToString());
+                    sw.WriteLine("CurrentRange" + sep + AcqDataRecord.ProgramDetails.I1Range.ToString());
                     // Trigger Details
                     sw.WriteLine("SamplingPeriod" + sep + AcqDataRecord.SamplingPeriod.ToString());
                     sw.WriteLine("NumPoints" + sep + AcqDataRecord.AcqDetails.NumPoints.ToString());

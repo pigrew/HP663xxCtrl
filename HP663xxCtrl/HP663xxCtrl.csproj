@@ -38,7 +38,9 @@
       <HintPath>..\packages\Gu.Wpf.NumericInput.0.5.1.2\lib\net45\Gu.Wpf.NumericInput.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Ivi.Visa, Version=5.6.0.0, Culture=neutral, PublicKeyToken=a128c98f1d7717c1, processorArchitecture=MSIL" />
+    <Reference Include="Ivi.Visa, Version=5.6.0.0, Culture=neutral, PublicKeyToken=a128c98f1d7717c1, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />

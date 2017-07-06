@@ -25,13 +25,8 @@ namespace HP663xxCtrl {
             WriteString("*ESE 0");
         }
 
-        public void SetCurrentRange(CurrentRanges range) {
-            switch (range)
-            {
-                case CurrentRanges.TWENTY_mA: WriteString("SENS:CURR:RANG MIN"); break;
-                case CurrentRanges.MEDIUM: WriteString("SENS:CURR:RANG 0.9"); break;
-                case CurrentRanges.HIGH: WriteString("SENS:CURR:RANG MAX"); break;
-            }
+        public void SetCurrentRange(double range) {
+            WriteString("SENS:CURR:RANG " + range.ToString(CI));
         }
         [Flags]
         public enum MeasurementEventEnum {
@@ -70,6 +65,7 @@ namespace HP663xxCtrl {
                 OVPVal = Double.NaN,
                 HasDVM = HasDVM,
                 HasOutput2 = HasOutput2,
+                I1Ranges = new double[] {0.02, 5},
                 ID = ID
             };
             details.Enabled = (Query("OUTP?").Trim().StartsWith("1"));
@@ -85,13 +81,7 @@ namespace HP663xxCtrl {
                 details.MaxI2 = double.Parse(parts[1],CI);
 
             }*/
-            double range = Double.Parse(Query(":sense:curr:range?").Trim(),CI);
-            if (range < 0.03)
-                details.Range = CurrentRanges.TWENTY_mA;
-            else if (range < 1.1)
-                details.Range = CurrentRanges.MEDIUM;
-            else
-                details.Range = CurrentRanges.HIGH;
+            details.I1Range = Double.Parse(Query(":sense:curr:range?").Trim(),CI);
 
             details.Detector = CurrentDetectorEnum.ACDC;
 
@@ -230,7 +220,10 @@ namespace HP663xxCtrl {
             int triggerOffset = 0
             )
         {
-            if (triggerCount * numPoints > 4096) {
+            //double nplc = 1;
+            // Always 33 us integration time, but a 278 us period
+
+            if (triggerCount * numPoints > 5000) {
                 throw new InvalidOperationException();
             }
             string modeString;
@@ -243,6 +236,7 @@ namespace HP663xxCtrl {
                 case SenseModeEnum.DVM:  modeString = "DVM"; break;
                 default: throw new InvalidOperationException("Unknown transient measurement mode");
             }
+            WriteString("SENSE:PCURRENT:SYNC OFF"); // off is digitization mode
             WriteString("SENSe:FUNCtion \"" + modeString + "\"");
             if (numPoints < 1 || numPoints > 4096)
                 throw new InvalidOperationException("Number of points must be betweer 1 and 4096");
@@ -253,7 +247,7 @@ namespace HP663xxCtrl {
                 interval = 15.6e-6;
             if (interval > 1e4)
                 interval = 1e4;
-            WriteString("SENSe:SWEEP:POINTS " + numPoints.ToString(CI) + "; " +
+            WriteString("SENSe:PCUR:AVERAGE " + numPoints.ToString(CI) + "; " +
                 "TINTerval " + interval.ToString(CI) + ";" +
                 "OFFSET:POINTS " + triggerOffset.ToString(CI));
             if(triggerEdge== TriggerSlopeEnum.Immediate || double.IsNaN(level)) {
