@@ -76,6 +76,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Current.cs" />
     <Compile Include="HP663xx.cs" />
     <Compile Include="IFastSMU.cs" />
     <Compile Include="InstrumentWorker.cs" />

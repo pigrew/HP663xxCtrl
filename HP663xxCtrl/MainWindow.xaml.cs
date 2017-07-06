@@ -213,7 +213,7 @@ namespace HP663xxCtrl {
             VM.I2 = details.I2;
             VM.HasChannel2 = details.HasOutput2;
             VM.HasDVM = details.HasDVM;
-            VM.I1Ranges = details.I1Ranges;
+            VM.I1Ranges = details.I1Ranges.Select(x => new Current() { I = x }).ToArray();
             
             OVPCheckbox.IsChecked = details.OVP;
             VM.OVPLevel = details.OVPVal;
@@ -229,7 +229,7 @@ namespace HP663xxCtrl {
             }
 
              for(int i=0; i< CurrentRangeComboBox.Items.Count; i++) {
-                 if(details.I1Range ==  (double)CurrentRangeComboBox.Items[i])
+                 if(details.I1Range ==  ((Current)CurrentRangeComboBox.Items[i]).I)
                      CurrentRangeComboBox.SelectedIndex = i;
             }
             switch (details.Detector) {
@@ -238,9 +238,9 @@ namespace HP663xxCtrl {
             }
         }
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
-            if (InstWorker != null) {
-                ComboBoxItem item = (ComboBoxItem)e.AddedItems[0];
-                InstWorker.RequestIRange((double)item.Tag);
+            if (InstWorker != null && e.AddedItems.Count > 0) {
+                Current item = (Current)e.AddedItems[0];
+                InstWorker.RequestIRange(item.I);
                 }
             }
         void HandleLogDatapoint(object sender, LoggerDatapoint dp) {

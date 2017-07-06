@@ -65,7 +65,7 @@ namespace HP663xxCtrl {
                 OVPVal = Double.NaN,
                 HasDVM = HasDVM,
                 HasOutput2 = HasOutput2,
-                I1Ranges = new double[] {0.02, 5},
+                I1Ranges = new double[] {0.005, 5},
                 ID = ID
             };
             details.Enabled = (Query("OUTP?").Trim().StartsWith("1"));
@@ -317,9 +317,11 @@ namespace HP663xxCtrl {
             WriteString("OUTPUT  " + (enabled?"ON":"OFF"));
         }
         public void SetIV(int channel, double voltage, double current) {
+            if (!HasOutput2 && channel == 2)
+                return;
             WriteString("VOLT" +
-                (channel == 2 ? "2 " : " ") + voltage.ToString(CI) +
-                ";:CURR" +
+                (channel == 2 ? "2 " : " ") + voltage.ToString(CI));
+            WriteString("CURR" +
                 (channel == 2 ? "2 " : " ") + current.ToString(CI) 
                 );
         }

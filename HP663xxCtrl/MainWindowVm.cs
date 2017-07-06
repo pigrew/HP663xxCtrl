@@ -13,8 +13,8 @@ namespace HP663xxCtrl  {
             get { return _HasDVM; }
             set { if (value != _HasDVM) { _HasDVM = value; NotifyPropertyChanged(); } }
         }
-        double[] _I1Ranges = new double[0];
-        public double[] I1Ranges {
+        Current[] _I1Ranges = new Current[0];
+        public Current[] I1Ranges {
             get { return _I1Ranges; }
             set { if (value != _I1Ranges) { _I1Ranges = value; NotifyPropertyChanged(); } }
         }
