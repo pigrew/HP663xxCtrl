@@ -25,7 +25,7 @@ namespace HP663xxCtrl {
 
         MainWindowVm VM;
 
-        InstrumentWorker InstWorker;
+        public InstrumentWorker InstWorker;
         Thread InstThread;
 
         bool ZedgraphLoggingMode = false;

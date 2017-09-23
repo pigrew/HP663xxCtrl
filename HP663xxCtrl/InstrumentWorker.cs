@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -32,7 +33,8 @@ namespace HP663xxCtrl {
             Program,
             ClearProtection,
             Log,
-            SetACDCDetector
+            SetACDCDetector,
+            DLFirmware
         }
         struct Command {
             public CommandEnum cmd;
@@ -64,7 +66,7 @@ namespace HP663xxCtrl {
         DateTime LastRefresh;
         public void ThreadMain() {
             // have to open the device to find the ID 
-            IMessageBasedSession visaDev = (IMessageBasedSession)GlobalResourceManager.Open(VisaAddress);
+            IMessageBasedSession visaDev = (IMessageBasedSession)GlobalResourceManager.Open(VisaAddress,AccessModes.None, 1000);
             visaDev.Clear();
             visaDev.FormattedIO.WriteLine("*IDN?");
             string idn = visaDev.FormattedIO.ReadLine();
@@ -104,7 +106,11 @@ namespace HP663xxCtrl {
                             DoClearProtection();
                             break;
                         case CommandEnum.SetACDCDetector:
-                            DoACDCDetector((CurrentDetectorEnum)cmd.arg);break;
+                            DoACDCDetector((CurrentDetectorEnum)cmd.arg);
+                            break;
+                        case CommandEnum.DLFirmware:
+                            DoDLFirmware((string)cmd.arg);
+                            break;
                         default:
                             throw new Exception("Unhandled command in InstrumentWorker");
                     }
@@ -206,6 +212,28 @@ namespace HP663xxCtrl {
             }
             if (StateChanged != null) StateChanged(this, StateEnum.Connected);
         }
+        void DoDLFirmware(string filename) {
+            try {
+                using (BinaryWriter bw = new BinaryWriter(File.Open(filename, FileMode.Create))) {
+                    for (uint i = 0; i <= 0xFFFF && !StopAcquireRequested; i+=4) {
+                        var x = ((HP663xx)dev).GetFirmwareWord(i);
+                        foreach(var w in x)
+                            bw.Write(w);
+                    }
+                }
+            } catch { // mostly IO exceptions
+
+            }
+        }
+        public void RequestDLFirmware(string filename) {
+            if (StopAcquireRequested == true)
+                return;
+            EventQueue.Add(new Command() {
+                cmd = CommandEnum.DLFirmware,
+                arg = filename
+            });
+        }
+
         public void RequestLog(SenseModeEnum mode, double interval) {
             if (StopAcquireRequested == true)
                 return;
@@ -245,6 +273,9 @@ namespace HP663xxCtrl {
                 cmd = CommandEnum.Program,
                 arg = details
             });
+        }
+        void DoDLFirmware() {
+
         }
         void DoClearProtection() {
             dev.ClearProtection();

@@ -7,6 +7,8 @@ using System.Text;
 using System.Windows.Input;
 using GalaSoft.MvvmLight.CommandWpf;
 using GalaSoft.MvvmLight;
+using System.Windows;
+using Microsoft.Win32;
 
 namespace HP663xxCtrl  {
     public class MainWindowVm : ViewModelBase {
@@ -92,15 +94,24 @@ namespace HP663xxCtrl  {
         
         public ICommand DLFirmwareCommand { get; private set; }
         void DLFirmware() {
-
+            SaveFileDialog sfd = new SaveFileDialog();
+            sfd.Filter = "Binary file (*.bin)|*.bin|All Files (*.*)|*.*";
+            var result = sfd.ShowDialog();
+            if (!result.HasValue || result == false)
+                return;
+            if (Window.InstWorker == null) {
+                MessageBox.Show("No device connected. Cannot download firmware");
+                return;
+            }
+            Window.InstWorker.RequestDLFirmware(sfd.FileName);
         }
 
         bool CanDownloadFirmware() {
-            return true;
+            return Window.DisconnectButton.IsEnabled && Window.InstWorker != null;
         }
-        MainWindow window;
+        MainWindow Window;
         public MainWindowVm(MainWindow w) {
-            this.window = w;
+            this.Window = w;
             DLFirmwareCommand = new RelayCommand(DLFirmware, CanDownloadFirmware);
         }
     }

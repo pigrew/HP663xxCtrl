@@ -200,7 +200,16 @@ namespace HP663xxCtrl
             while(!( (msg = Query("SYSTem:ERRor?")).StartsWith("+0,"))) {
             }
         }
-
+        // Return 4 32-bit words
+        public UInt32[] GetFirmwareWord(uint w) {
+            
+            WriteString(String.Format(
+                "DIAG:PEEK? #H{0:X4}; PEEK? #H{1:X4}; PEEK? #H{2:X4}; PEEK? #H{3:X4}",
+                w,w+1,w+2,w+3));
+            string s = ReadString();
+            var parts = s.Split(new char[] { ';' }).Select(x => x.Trim().Substring(2));
+            return parts.Select(x => UInt32.Parse(x, System.Globalization.NumberStyles.HexNumber)).ToArray();
+        }
         public void SetupLogging(
             SenseModeEnum mode,
             double interval
