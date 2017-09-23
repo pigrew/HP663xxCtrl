@@ -4,10 +4,8 @@
         xmlns:zed="clr-namespace:ZedGraph;assembly=ZedGraph"
         xmlns:numericInput="http://gu.se/NumericInput"
         xmlns:local="clr-namespace:HP663xxCtrl" x:Class="HP663xxCtrl.MainWindow"
+    DataContext="{Binding MainWindowVM}"
         Title="HP663xx Control" Closing="Window_Closing" >
-    <Window.DataContext>
-        <local:MainWindowVm/>
-    </Window.DataContext>
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <Style TargetType="{x:Type Control}" x:Key="BoldFixed">
@@ -31,6 +29,9 @@
                 <MenuItem Header="Cu_t" Command="ApplicationCommands.Cut"/>
                 <MenuItem Header="_Copy" Command="ApplicationCommands.Copy"/>
                 <MenuItem Header="Co_py" Command="ApplicationCommands.Paste"/>
+            </MenuItem>
+            <MenuItem Header="_Tools">
+                <MenuItem Header="Download Firmware" Command="{Binding DLFirmwareCommand}"/>
             </MenuItem>
         </Menu>
         <StatusBar DockPanel.Dock="Bottom" FontFamily="Consolas">

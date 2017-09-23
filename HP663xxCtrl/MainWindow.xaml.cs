@@ -51,7 +51,7 @@ namespace HP663xxCtrl {
             zgc.GraphPane.Title.IsVisible = false;
             zgc.GraphPane.XAxis.Title.Text = "Time (s)";
 
-            VM = new MainWindowVm();
+            VM = new MainWindowVm(this);
             this.DataContext = VM;
         }
 
