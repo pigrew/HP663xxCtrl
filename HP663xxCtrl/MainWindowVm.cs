@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Windows.Input;
 using GalaSoft.MvvmLight.CommandWpf;
 using GalaSoft.MvvmLight;
@@ -12,6 +13,9 @@ using Microsoft.Win32;
 
 namespace HP663xxCtrl  {
     public class MainWindowVm : ViewModelBase {
+
+        public InstrumentWorker InstWorker;
+        public Thread InstThread;
 
         bool _HasDVM = true;
         public bool HasDVM {
@@ -104,15 +108,15 @@ namespace HP663xxCtrl  {
             var result = sfd.ShowDialog();
             if (!result.HasValue || result == false)
                 return;
-            if (Window.InstWorker == null) {
+            if (InstWorker == null) {
                 MessageBox.Show("No device connected. Cannot download firmware");
                 return;
             }
-            Window.InstWorker.RequestDLFirmware(sfd.FileName);
+            InstWorker.RequestDLFirmware(sfd.FileName);
         }
 
         bool CanDownloadFirmware() {
-            return Window.DisconnectButton.IsEnabled && Window.InstWorker != null;
+            return Window.DisconnectButton.IsEnabled && InstWorker != null;
         }
         MainWindow Window;
         public MainWindowVm(MainWindow w) {

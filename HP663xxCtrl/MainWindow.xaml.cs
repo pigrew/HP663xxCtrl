@@ -25,15 +25,16 @@ namespace HP663xxCtrl {
 
         MainWindowVm VM;
 
-        public InstrumentWorker InstWorker;
-        Thread InstThread;
-
         bool ZedgraphLoggingMode = false;
         DateTime LogStartTime;
 
         AcquisitionData AcqDataRecord = null;
 
         public MainWindow() {
+
+            VM = new MainWindowVm(this);
+            this.DataContext = VM;
+
             InitializeComponent();
             ZedGraphControl zgc = (ZedGraphControl)ZedGraphHost.Child;
             float zgcSizeScale = 1.5f;
@@ -51,8 +52,6 @@ namespace HP663xxCtrl {
             zgc.GraphPane.Title.IsVisible = false;
             zgc.GraphPane.XAxis.Title.Text = "Time (s)";
 
-            VM = new MainWindowVm(this);
-            this.DataContext = VM;
         }
 
         System.Drawing.Color[] CurveColors = new System.Drawing.Color[] {
@@ -60,41 +59,41 @@ namespace HP663xxCtrl {
             System.Drawing.Color.Blue, System.Drawing.Color.Green
         };
         private void GoButton_Click(object sender, RoutedEventArgs e) {
-            if (InstThread != null || InstWorker != null)
+            if (VM.InstThread != null || VM.InstWorker != null)
                 return;
             ConnectButton.IsEnabled = false;
             DisconnectButton.IsEnabled = true;
-            InstWorker = new InstrumentWorker(AddressComboBox.Text);
-            InstWorker.WorkerDone += delegate(object sender2, EventArgs args)
+            VM.InstWorker = new InstrumentWorker(AddressComboBox.Text);
+            VM.InstWorker.WorkerDone += delegate(object sender2, EventArgs args)
             {
                 Dispatcher.BeginInvoke((Action)(() =>
                 {
-                    InstThread = null;
-                    InstWorker = null;
+                    VM.InstThread = null;
+                    VM.InstWorker = null;
                     ConnectButton.IsEnabled = true;
                     DisconnectButton.IsEnabled = false;
                 }));
             };
-            InstWorker.NewState += delegate(object sender2, InstrumentState state)
+            VM.InstWorker.NewState += delegate(object sender2, InstrumentState state)
             {
                 Dispatcher.BeginInvoke((Action)(() =>
                 {
                     UpdateStateLabels(sender2, state);
                 }));
             };
-            InstWorker.DataAcquired += delegate(object sender2, MeasArray measArray)
+            VM.InstWorker.DataAcquired += delegate(object sender2, MeasArray measArray)
             {
                 Dispatcher.BeginInvoke((Action)(() => { HandleDataAcquired(sender2, measArray); }));
             };
-            InstWorker.ProgramDetailsReadback += delegate(object sender2, ProgramDetails details)
+            VM.InstWorker.ProgramDetailsReadback += delegate(object sender2, ProgramDetails details)
             {
                 Dispatcher.BeginInvoke((Action)(() => { HandleProgramDetailsReadback(sender2, details); }));
             };
-            InstWorker.LogerDatapointAcquired += delegate(object sender2, LoggerDatapoint point)
+            VM.InstWorker.LogerDatapointAcquired += delegate(object sender2, LoggerDatapoint point)
             {
                 Dispatcher.BeginInvoke((Action)(() => { HandleLogDatapoint(sender2, point); }));
             };
-            InstWorker.StateChanged += delegate(object sender2, InstrumentWorker.StateEnum state)
+            VM.InstWorker.StateChanged += delegate(object sender2, InstrumentWorker.StateEnum state)
             {
                 Dispatcher.BeginInvoke((Action)(() =>
                 {
@@ -127,15 +126,15 @@ namespace HP663xxCtrl {
                     }
                 }));
             };
-            InstThread = new Thread(InstWorker.ThreadMain);
-            InstThread.IsBackground = true;
+            VM.InstThread = new Thread(VM.InstWorker.ThreadMain);
+            VM.InstThread.IsBackground = true;
 
-            InstThread.Name = "Instrument Worker";
-            InstThread.Start();
+            VM.InstThread.Name = "Instrument Worker";
+            VM.InstThread.Start();
         }
         private void DisconnectButton_Click(object sender, RoutedEventArgs e) {
             ConnectionStatusBarItem.Content = "DISCONNECTING";
-            InstWorker.RequestShutdown();
+            VM.InstWorker.RequestShutdown();
         }
         private void UpdateStateLabels(object sender, InstrumentState state) {
             NumberFormatInfo nfi = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
@@ -239,9 +238,9 @@ namespace HP663xxCtrl {
             }
         }
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
-            if (InstWorker != null && e.AddedItems.Count > 0) {
+            if (VM.InstWorker != null && e.AddedItems.Count > 0) {
                 Current item = (Current)e.AddedItems[0];
-                InstWorker.RequestIRange(item.I);
+                VM.InstWorker.RequestIRange(item.I);
                 }
             }
         void HandleLogDatapoint(object sender, LoggerDatapoint dp) {
@@ -266,9 +265,9 @@ namespace HP663xxCtrl {
         }
         private void LogButton_Click(object sender, RoutedEventArgs e) {
 
-            if (InstWorker != null) {
+            if (VM.InstWorker != null) {
                 LogStartTime = DateTime.Now;
-                InstWorker.StopAcquireRequested = false;
+                VM.InstWorker.StopAcquireRequested = false;
                 AcquireButton.IsEnabled = false;
                 ApplyProgramButton.IsEnabled = false;
                 ClearProtectionButton.IsEnabled = false;
@@ -298,18 +297,18 @@ namespace HP663xxCtrl {
                 }
                 double interval = 0;
                 Double.TryParse(LogInterval.Text, out interval);
-                InstWorker.RequestLog(mode, interval);
+                VM.InstWorker.RequestLog(mode, interval);
             }
         }
 
         private void StopLoggingButton_Click(object sender, RoutedEventArgs e) {
             StopLoggingButton.IsEnabled = false;
-            InstWorker.StopAcquireRequested = true;
+            VM.InstWorker.StopAcquireRequested = true;
         }
 
         private void AcquireButton_Click(object sender, RoutedEventArgs e) {
 
-            if (InstWorker != null) {
+            if (VM.InstWorker != null) {
                 var errors = GetTreeErrors(AcquisitionTabItem);
 
                 if (errors.Count > 0) {
@@ -324,7 +323,7 @@ namespace HP663xxCtrl {
                 ClearProtectionButton.IsEnabled = false;
                 StopAcquireButton.IsEnabled = true;
                 LogButton.IsEnabled = false;
-                InstWorker.StopAcquireRequested = false;
+                VM.InstWorker.StopAcquireRequested = false;
                 SaveAcquireButton.IsEnabled = false;
 
                 InstrumentWorker.AcquireDetails details = new InstrumentWorker.AcquireDetails();
@@ -355,13 +354,13 @@ namespace HP663xxCtrl {
                     case "EITHER": details.triggerEdge = TriggerSlopeEnum.Either; break;
                     default: throw new Exception();
                 }
-                AcqDataRecord = InstWorker.RequestAcquire(details);
+                AcqDataRecord = VM.InstWorker.RequestAcquire(details);
             }
         }
 
         private void StopAcquireButton_Click(object sender, RoutedEventArgs e) {
             StopAcquireButton.IsEnabled = false;
-            InstWorker.StopAcquireRequested = true;
+            VM.InstWorker.StopAcquireRequested = true;
         }
         private void SaveAcquireButton_Click(object sender, RoutedEventArgs e) {
             Microsoft.Win32.SaveFileDialog sfd = new Microsoft.Win32.SaveFileDialog();
@@ -423,8 +422,8 @@ namespace HP663xxCtrl {
             }
         }
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
-            if (InstWorker != null) {
-                InstWorker.RequestShutdown();
+            if (VM.InstWorker != null) {
+                VM.InstWorker.RequestShutdown();
                 // Hack... probably some better way to do this
                 System.Threading.Thread.Sleep(500);
             }
@@ -434,7 +433,7 @@ namespace HP663xxCtrl {
             ProgramDetails details = new ProgramDetails();
             string ParseError = "";
             var blah = OVPLevelTextBox;
-            if (InstWorker == null)
+            if (VM.InstWorker == null)
                 return;
 
             details.Enabled = EnableOutputCheckbox.IsChecked.Value;
@@ -468,11 +467,11 @@ namespace HP663xxCtrl {
                 MessageBox.Show(ParseError, "Invalid Data Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            InstWorker.RequestProgram(details);
+            VM.InstWorker.RequestProgram(details);
         }
 
         private void ClearProtectionButton_Click(object sender, RoutedEventArgs e) {
-            InstWorker.RequestClearProtection();
+            VM.InstWorker.RequestClearProtection();
         }
 
         private void LoggerCurveCheckBox_Checked(object sender, RoutedEventArgs e) {
@@ -499,12 +498,11 @@ namespace HP663xxCtrl {
         }
 
         private void ACDCDetectorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
-            if (InstWorker != null) {
+            if (VM.InstWorker != null) {
                 switch ((string)((ComboBoxItem)e.AddedItems[0]).Tag) {
-                    case "DC": InstWorker.RequestACDCDetector(CurrentDetectorEnum.DC); break;
-                    case "ACDC": InstWorker.RequestACDCDetector(CurrentDetectorEnum.ACDC); break;
+                    case "DC": VM.InstWorker.RequestACDCDetector(CurrentDetectorEnum.DC); break;
+                    case "ACDC": VM.InstWorker.RequestACDCDetector(CurrentDetectorEnum.ACDC); break;
                 }
-
             }
         }
     }
