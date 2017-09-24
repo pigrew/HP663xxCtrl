@@ -85,6 +85,7 @@ namespace HP663xxCtrl
                 I2 = HasOutput2 ? double.Parse(parts[7], CI) : double.NaN,
                 HasDVM = HasDVM,
                 HasOutput2 = HasOutput2,
+                HasOVP = this.HasOVP,
                 ID = ID
             };
             // Maximums

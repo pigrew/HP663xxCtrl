@@ -19,6 +19,9 @@
         <Style TargetType="{x:Type FrameworkElement}" x:Key="Ch2_Visibility">
             <Setter Property="Visibility" Value="{Binding HasChannel2, Converter={StaticResource BooleanToVisibilityConverter}}" />
         </Style>
+        <Style TargetType="{x:Type FrameworkElement}" x:Key="OVP_Visibility">
+            <Setter Property="Visibility" Value="{Binding HasOVP, Converter={StaticResource BooleanToVisibilityConverter}}" />
+        </Style>
     </Window.Resources>
     <DockPanel>
         <Menu DockPanel.Dock="Top">
@@ -143,7 +146,7 @@
                         <CheckBox x:Name="EnableOutputCheckbox" Content="EN  " />
                         <CheckBox x:Name="OCPCheckbox" Content="OCP" />
                     </StackPanel>
-                    <DockPanel Grid.Row="4" Grid.ColumnSpan="3" >
+                    <DockPanel Grid.Row="4" Grid.ColumnSpan="3"  Style="{StaticResource OVP_Visibility}">
                         <CheckBox DockPanel.Dock="Left" x:Name="OVPCheckbox" Content="OVP: " VerticalAlignment="Center" />
                         <numericInput:DoubleBox x:Name="OVPLevelTextBox" Value="{Binding OVPLevel}" CanValueBeNull="True" MinValue="0" MaxValue="22" />
                     </DockPanel>

@@ -66,7 +66,7 @@ namespace HP663xxCtrl {
         public double V1, I1, V2, I2;
 
         // And other things that are not actually used during programming, and is implicit to the unit
-        public bool HasDVM, HasOutput2;
+        public bool HasDVM, HasOutput2, HasOVP;
         public string ID;
         public double MaxV1, MaxI1, MaxV2, MaxI2;
         public double I1Range;

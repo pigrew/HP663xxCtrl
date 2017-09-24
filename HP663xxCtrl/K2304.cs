@@ -66,6 +66,7 @@ namespace HP663xxCtrl {
                 OVPVal = Double.NaN,
                 HasDVM = HasDVM,
                 HasOutput2 = HasOutput2,
+                HasOVP = this.HasOVP,
                 I1Ranges = new double[] {0.005, 5},
                 ID = ID
             };

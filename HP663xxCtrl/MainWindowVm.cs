@@ -18,6 +18,11 @@ namespace HP663xxCtrl  {
             get { return _HasDVM; }
             set { this.Set(ref _HasDVM, value, "HasDVM"); }
         }
+        bool _HasOVP = true;
+        public bool HasOVP {
+            get { return _HasOVP; }
+            set { if (value != _HasOVP) { _HasOVP = value; NotifyPropertyChanged(); } }
+        }
         Current[] _I1Ranges = new Current[0];
         public Current[] I1Ranges {
             get { return _I1Ranges; }

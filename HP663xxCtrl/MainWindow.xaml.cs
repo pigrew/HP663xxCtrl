@@ -213,6 +213,7 @@ namespace HP663xxCtrl {
             VM.I2 = details.I2;
             VM.HasChannel2 = details.HasOutput2;
             VM.HasDVM = details.HasDVM;
+            VM.HasOVP = details.HasOVP;
             VM.I1Ranges = details.I1Ranges.Select(x => new Current() { I = x }).ToArray();
             
             OVPCheckbox.IsChecked = details.OVP;
