@@ -21,7 +21,7 @@ namespace HP663xxCtrl  {
         bool _HasOVP = true;
         public bool HasOVP {
             get { return _HasOVP; }
-            set { if (value != _HasOVP) { _HasOVP = value; NotifyPropertyChanged(); } }
+            set { Set(ref _HasOVP, value, "HasOVP"); }
         }
         Current[] _I1Ranges = new Current[0];
         public Current[] I1Ranges {
