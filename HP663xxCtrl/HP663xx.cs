@@ -13,12 +13,14 @@ namespace HP663xxCtrl
         CultureInfo CI = System.Globalization.CultureInfo.InvariantCulture;
 
         IMessageBasedSession dev;
+        bool HasDataLog { get; set; }
         public bool HasDVM { get; private set; }
         public bool HasOutput2 { get; private set; }
         public bool HasOVP { get { return true; } }
         double[] I1Ranges;
 
         string ID;
+        string Model;
         public void Reset()
         {
             WriteString("*RST");
@@ -210,6 +212,8 @@ namespace HP663xxCtrl
             var parts = s.Split(new char[] { ';' }).Select(x => x.Trim().Substring(2));
             return parts.Select(x => UInt32.Parse(x, System.Globalization.NumberStyles.HexNumber)).ToArray();
         }
+        double DLogPeriod;
+        DateTime DLogTime;
         public void SetupLogging(
             SenseModeEnum mode,
             double interval
@@ -227,21 +231,94 @@ namespace HP663xxCtrl
                 case SenseModeEnum.DVM: modeString = "DVM"; break;
                 default: throw new InvalidOperationException("Unknown transient measurement mode");
             }
-            // Immediate always has a trigger count of 1
-            WriteString("SENSe:FUNCtion \"" + modeString + "\"");
-            WriteString("SENSe:SWEEP:POINTS " + numPoints.ToString(CI) + "; " +
-                "TINTerval " + AcqInterval.ToString(CI) + ";" +
-                "OFFSET:POINTS " + triggerOffset.ToString(CI));
-            WriteString("TRIG:ACQ:SOURCE BUS");
-            WriteString("ABORT;*WAI");
-            //WriteString("INIT:NAME ACQ;:TRIG:ACQ");
+            if (HasDataLog) {
+                var currRange = Query("SENS:CURR:RANG?").Trim();
+                string detector = "DC";
+                if(interval > 1.0)
+                    interval = 1.0;
+                // Official GUI used 0.00500760 as minimum.
+                // Less than about 3 ms causes buffer overruns
+                if(interval < 0.005)
+                    interval = 0.005;
+                WriteString(String.Format(
+                    "CONF:DLOG {0},{1},{2},{3},1024,IMM",
+                    modeString, currRange, detector,interval));
+                var dlogConfReadback = Query("CONF:DLOG?").Trim();
+                var dlogConfReadbackParts = dlogConfReadback.Split(new char[] { ',' });
+                DLogPeriod = double.Parse(dlogConfReadbackParts[3]);
+                WriteString("INIT:NAME DLOG");
+                WriteString("TRIG:ACQ");
+                Query("*ESR?");
+                DLogTime = DateTime.Now;
+            } else {
+                // Immediate always has a trigger count of 1
+                WriteString("SENSe:FUNCtion \"" + modeString + "\"");
+                WriteString("SENSe:SWEEP:POINTS " + numPoints.ToString(CI) + "; " +
+                    "TINTerval " + AcqInterval.ToString(CI) + ";" +
+                    "OFFSET:POINTS " + triggerOffset.ToString(CI));
+                WriteString("TRIG:ACQ:SOURCE BUS");
+                WriteString("ABORT;*WAI");
+                //WriteString("INIT:NAME ACQ;:TRIG:ACQ");
 
-            Query("*OPC?");
+                Query("*OPC?");
+            }
         }
-        public LoggerDatapoint MeasureLoggingPoint( SenseModeEnum mode) {
+        float[] ReadFloatBlock() {
+
+            byte[] x = dev.RawIO.Read();
+            int i = 0;
+            if (x[i] != '#')
+                throw new FormatException();
+            i++;
+            int lenLen = int.Parse(System.Text.Encoding.ASCII.GetString(x, i, 1));
+            i++;
+            int len = int.Parse(System.Text.Encoding.ASCII.GetString(x, 2, lenLen));
+            i += lenLen;
+            // If more data is needed?
+            int expectedTotalLen = i + len;
+            while (x.Length < expectedTotalLen)
+                x = x.Concat(dev.RawIO.Read()).ToArray();
+            if (len % 4 != 0)
+                throw new FormatException();
+            int n = len / 4;
+            var ret = new float[n];
+            var be = new byte[4];
+            for (int j = 0; j < n; i += 4, j++) {
+                // swap byte order
+                be[0] = x[i + 3];
+                be[1] = x[i + 2];
+                be[2] = x[i + 1];
+                be[3] = x[i + 0];
+                ret[j] = BitConverter.ToSingle(be,0);
+            }
+            return ret;
+        }
+        public LoggerDatapoint[] MeasureLoggingPoint( SenseModeEnum mode) {
             LoggerDatapoint ret = new LoggerDatapoint();
             string rsp;
             string[] parts;
+            if (HasDataLog) {
+                var retList = new List<LoggerDatapoint>();
+                WriteString("FETC:ARR:DLOG?");
+                var data = ReadFloatBlock();
+                if (data[0] != data[1] || data[0] != data[2])
+                    throw new Exception("Unexpected block format");
+                // data[0,1,2] is -1 if there is a buffer overrun.
+                if(data[0] <0)
+                    System.Diagnostics.Trace.WriteLine("Buffer overrun");
+                System.Diagnostics.Trace.WriteLine(String.Format("N={0}, L={1}", data[0], (data.Length-3)/3));
+                for (int i = 3, n=0; i < data.Length; i += 3, n++) {
+                    ret = new LoggerDatapoint();
+                    ret.Mean = data[i];
+                    ret.Min = data[i + 1];
+                    ret.Max = data[i + 2];
+                    ret.RMS = double.NaN;
+                    ret.time = DLogTime;
+                    DLogTime = DLogTime.AddSeconds(DLogPeriod);
+                    retList.Add(ret);
+                }
+                return retList.ToArray();
+            }
             switch(mode) {
                 case SenseModeEnum.CURRENT:
                     rsp = Query("MEAS:CURR?;:FETCH:CURR:MIN?;MAX?;ACDC?").Trim();
@@ -266,7 +343,7 @@ namespace HP663xxCtrl
                     break;
             }
             ret.time = DateTime.Now;
-            return ret;
+            return new LoggerDatapoint[] {ret};
         }
         public void StartTransientMeasurement(
             SenseModeEnum mode,
@@ -418,21 +495,38 @@ namespace HP663xxCtrl
 
             WriteString("*IDN?");
             ID = ReadString().Trim();
-            if (ID.Contains(",66309B,") || ID.Contains(",66319B,")) {
-                HasDVM = false; HasOutput2 = true;
-            } else if (ID.Contains(",66309D,") || ID.Contains(",66319D,")) {
-                HasDVM = true; HasOutput2 = true;
-            } else if (ID.Contains(",66311B,") || ID.Contains(",66321B,")) {
-                HasDVM = false; HasOutput2 = false;
-            } else if (ID.Contains(",66311D,") || ID.Contains(",66321D,")) {
-                HasDVM = true; HasOutput2 = true;
-            } else  {
+            var IDParts = ID.Trim().Split(new char[] { ',' });
+            if(IDParts.Length != 4) {
                 dev.Dispose();
                 dev = null;
                 throw new InvalidOperationException("Not a known 663xx supply!");
             }
+            Model = IDParts[1];
+            switch (Model.ToUpper()) {
+                case "66309B":
+                case "66319B":
+                    HasDVM = false; HasOutput2 = true;
+                    break;
+                case "66309D":
+                case "66319D":
+                    HasDVM = true; HasOutput2 = true;
+                    break;
+                case "66311B":
+                case "66321B":
+                    HasDVM = false; HasOutput2 = false;
+                    break;
+                case "66311D":
+                case "66321D,":
+                    HasDVM = true; HasOutput2 = true;
+                    break;
+                default:
+                    dev.Dispose();
+                    dev = null;
+                    throw new InvalidOperationException("Not a known 663xx supply!");
+            }
+            HasDataLog = IDParts[3].ToUpper().StartsWith("A.03");
             I1Ranges = new double[] { 0.02, 3 };
-            if (ID.Contains(",66319") || ID.Contains(",66319"))
+            if (Model.StartsWith("66319") || Model.StartsWith("66319"))
                 I1Ranges = new double[] { 0.02, 1, 3 };
             WriteString("STATUS:PRESET"); // Clear PTR/NTR/ENABLE register
             EnsurePSCOne();

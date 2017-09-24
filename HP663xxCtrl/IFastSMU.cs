@@ -88,7 +88,7 @@ namespace HP663xxCtrl {
         void SetOVP(double ovp);
         void EnableOutput(bool enabled);
         InstrumentState ReadState(bool measureCh2 = true, bool measureDVM = true);
-        LoggerDatapoint MeasureLoggingPoint(SenseModeEnum mode);
+        LoggerDatapoint[] MeasureLoggingPoint(SenseModeEnum mode);
         ProgramDetails ReadProgramDetails();
         // Measurements
         void AbortMeasurement();

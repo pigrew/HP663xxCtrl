@@ -180,7 +180,7 @@ namespace HP663xxCtrl {
 
             Query("*OPC?");
         }
-        public LoggerDatapoint MeasureLoggingPoint( SenseModeEnum mode) {
+        public LoggerDatapoint[] MeasureLoggingPoint( SenseModeEnum mode) {
             LoggerDatapoint ret = new LoggerDatapoint();
             double[] rsp;
             switch(mode) {
@@ -210,7 +210,7 @@ namespace HP663xxCtrl {
                     break;
             }
             ret.time = DateTime.Now;
-            return ret;
+            return new LoggerDatapoint[] {ret};
         }
         public void StartTransientMeasurement(
             SenseModeEnum mode,

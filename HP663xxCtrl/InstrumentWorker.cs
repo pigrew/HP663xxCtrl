@@ -207,8 +207,11 @@ namespace HP663xxCtrl {
                     return;
                 }
                 var data = dev.MeasureLoggingPoint(mode);
-                if (LogerDatapointAcquired != null)
-                    LogerDatapointAcquired(this, data);
+                if (LogerDatapointAcquired != null) {
+                    foreach(var p in data)
+                        LogerDatapointAcquired(this, p);
+
+                }
             }
             if (StateChanged != null) StateChanged(this, StateEnum.Connected);
         }
