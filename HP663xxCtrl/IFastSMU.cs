@@ -13,7 +13,8 @@ namespace HP663xxCtrl {
 
     public struct LoggerDatapoint {
         public double Min, Mean, Max, RMS;
-        public DateTime time;
+        public double t;
+        public DateTime RecordTime;
     }
     public enum OutputCompensationEnum {
         HighCap,

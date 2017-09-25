@@ -153,7 +153,7 @@ namespace HP663xxCtrl {
             //while(!( (msg = Query("SYSTem:ERRor?")).StartsWith("0,"))) {
             //}
         }
-
+        System.Diagnostics.Stopwatch DLogStopwatch;
         public void SetupLogging(
             SenseModeEnum mode, double interval
             ) {
@@ -178,7 +178,8 @@ namespace HP663xxCtrl {
             // Immediate always has a trigger count of 1
             WriteString("SENSe:FUNCtion \"" + modeString + "\"");
             WriteString("SENS:NPLC " + nplc.ToString());
-
+            DLogStopwatch = new System.Diagnostics.Stopwatch();
+            DLogStopwatch.Start();
             Query("*OPC?");
         }
         public LoggerDatapoint[] MeasureLoggingPoint( SenseModeEnum mode) {
@@ -210,7 +211,8 @@ namespace HP663xxCtrl {
                      ret.RMS = double.Parse(parts[3], CI);*/
                     break;
             }
-            ret.time = DateTime.Now;
+            ret.t = DLogStopwatch.Elapsed.TotalSeconds;
+            ret.RecordTime = DateTime.Now;
             return new LoggerDatapoint[] {ret};
         }
         public void StartTransientMeasurement(

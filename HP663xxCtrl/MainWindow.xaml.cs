@@ -246,19 +246,19 @@ namespace HP663xxCtrl {
         void HandleLogDatapoint(object sender, LoggerDatapoint dp) {
             if(!double.IsNaN(dp.Min))
                 zgc.GraphPane.CurveList[0].AddPoint(
-                    dp.time.Subtract(LogStartTime).TotalSeconds,
+                    dp.t,
                     dp.Min);
             if(!double.IsNaN(dp.Mean))
                 zgc.GraphPane.CurveList[1].AddPoint(
-                    dp.time.Subtract(LogStartTime).TotalSeconds,
+                    dp.t,
                     dp.Mean);
             if(!double.IsNaN(dp.Max))
             zgc.GraphPane.CurveList[2].AddPoint(
-                dp.time.Subtract(LogStartTime).TotalSeconds,
+                dp.t,
                 dp.Max);
             if(!double.IsNaN(dp.RMS))
                 zgc.GraphPane.CurveList[3].AddPoint(
-                    dp.time.Subtract(LogStartTime).TotalSeconds,
+                    dp.t,
                     dp.RMS);
             zgc.AxisChange();
             zgc.Invalidate();

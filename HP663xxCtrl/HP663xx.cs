@@ -214,7 +214,8 @@ namespace HP663xxCtrl
             return parts.Select(x => UInt32.Parse(x, System.Globalization.NumberStyles.HexNumber)).ToArray();
         }
         double DLogPeriod;
-        DateTime DLogTime;
+        System.Diagnostics.Stopwatch LoggingStopwatch;
+        long LoggingN;
         public void SetupLogging(
             SenseModeEnum mode,
             double interval
@@ -250,7 +251,6 @@ namespace HP663xxCtrl
                 WriteString("INIT:NAME DLOG");
                 WriteString("TRIG:ACQ");
                 Query("*ESR?");
-                DLogTime = DateTime.Now;
             } else {
                 // Immediate always has a trigger count of 1
                 WriteString("SENSe:FUNCtion \"" + modeString + "\"");
@@ -263,7 +263,13 @@ namespace HP663xxCtrl
 
                 Query("*OPC?");
             }
+            LoggingStopwatch = new System.Diagnostics.Stopwatch();
+            LoggingN = 0;
+            LoggingStopwatch.Start();
         }
+        // Reimplemented here versus the IVI library version because I 
+        // Couldn't figure out how to read the final \n at the end of the block,
+        // which was causing communications issues.
         float[] ReadFloatBlock() {
 
             byte[] x = dev.RawIO.Read();
@@ -304,19 +310,30 @@ namespace HP663xxCtrl
                 var data = ReadFloatBlock();
                 if (data[0] != data[1] || data[0] != data[2])
                     throw new Exception("Unexpected block format");
+                DateTime recordTime = DateTime.Now;
                 // data[0,1,2] is -1 if there is a buffer overrun.
                 if(data[0] <0)
                     System.Diagnostics.Trace.WriteLine("Buffer overrun");
-                System.Diagnostics.Trace.WriteLine(String.Format("N={0}, L={1}", data[0], (data.Length-3)/3));
                 for (int i = 3, n=0; i < data.Length; i += 3, n++) {
                     ret = new LoggerDatapoint();
                     ret.Mean = data[i];
                     ret.Min = data[i + 1];
                     ret.Max = data[i + 2];
                     ret.RMS = double.NaN;
-                    ret.time = DLogTime;
-                    DLogTime = DLogTime.AddSeconds(DLogPeriod);
+                    ret.t = LoggingN*DLogPeriod;
+                    ret.RecordTime = recordTime;
+                    LoggingN++;
                     retList.Add(ret);
+                }
+                if(data[0]>0)
+                {
+                    var realDuration = LoggingStopwatch.Elapsed.TotalSeconds;
+                    var deltaDuration = (LoggingN-1)*DLogPeriod - realDuration;
+                    System.Diagnostics.Trace.WriteLine(String.Format("N={0}, dt={1} s, rate={2} ppm", data[0],
+                        deltaDuration,
+                        deltaDuration / realDuration * 1.0e6
+                        ));
+
                 }
                 return retList.ToArray();
             }
@@ -343,7 +360,8 @@ namespace HP663xxCtrl
                     ret.Mean = double.Parse(parts[0], CI);
                     break;
             }
-            ret.time = DateTime.Now;
+            ret.t = LoggingStopwatch.Elapsed.TotalSeconds;
+            ret.RecordTime = DateTime.Now;
             return new LoggerDatapoint[] {ret};
         }
         public void StartTransientMeasurement(
