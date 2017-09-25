@@ -214,8 +214,6 @@ namespace HP663xxCtrl
             return parts.Select(x => UInt32.Parse(x, System.Globalization.NumberStyles.HexNumber)).ToArray();
         }
         double DLogPeriod;
-        System.Diagnostics.Stopwatch LoggingStopwatch;
-        long LoggingN;
         public void SetupLogging(
             SenseModeEnum mode,
             double interval
@@ -235,13 +233,14 @@ namespace HP663xxCtrl
             }
             if (HasDataLog) {
                 var currRange = Query("SENS:CURR:RANG?").Trim();
-                string detector = "DC";
+                string detector = Query("SENSe:CURRent:DETector?").Trim();
                 if(interval > 1.0)
                     interval = 1.0;
                 // Official GUI used 0.00500760 as minimum.
-                // Less than about 3 ms causes buffer overruns
-                if(interval < 0.005)
-                    interval = 0.005;
+                // Less than about 3 ms causes nearly immediate buffer overruns
+                // Less than about 5 ms causes eventual buffer overruns.
+                if(interval < 0.003)
+                    interval = 0.003;
                 WriteString(String.Format(
                     "CONF:DLOG {0},{1},{2},{3},1024,IMM",
                     modeString, currRange, detector,interval));
@@ -266,20 +265,21 @@ namespace HP663xxCtrl
             LoggingStopwatch = new System.Diagnostics.Stopwatch();
             LoggingN = 0;
             LoggingStopwatch.Start();
+            DLogLostTime = 0;
+            DLogInOverrun = false;
         }
         // Reimplemented here versus the IVI library version because I 
         // Couldn't figure out how to read the final \n at the end of the block,
         // which was causing communications issues.
+        // Note that you need to read the '#' before calling this function
         float[] ReadFloatBlock() {
 
-            byte[] x = dev.RawIO.Read();
+            byte[] x;
             int i = 0;
-            if (x[i] != '#')
-                throw new FormatException();
-            i++;
+            x = dev.RawIO.Read();
             int lenLen = int.Parse(System.Text.Encoding.ASCII.GetString(x, i, 1));
             i++;
-            int len = int.Parse(System.Text.Encoding.ASCII.GetString(x, 2, lenLen));
+            int len = int.Parse(System.Text.Encoding.ASCII.GetString(x, i, lenLen));
             i += lenLen;
             // If more data is needed?
             int expectedTotalLen = i + len;
@@ -300,6 +300,12 @@ namespace HP663xxCtrl
             }
             return ret;
         }
+        double DLogFudgeOffset;
+        System.Diagnostics.Stopwatch LoggingStopwatch;
+        long LoggingN;
+        double DLogLastSW;
+        double DLogLostTime; // due to buffer overruns
+        bool DLogInOverrun; 
         public LoggerDatapoint[] MeasureLoggingPoint( SenseModeEnum mode) {
             LoggerDatapoint ret = new LoggerDatapoint();
             string rsp;
@@ -307,35 +313,55 @@ namespace HP663xxCtrl
             if (HasDataLog) {
                 var retList = new List<LoggerDatapoint>();
                 WriteString("FETC:ARR:DLOG?");
+                byte[] x = dev.RawIO.Read(1);
+                if (x.Length != 1 || x[0] != '#')
+                    throw new FormatException();
+                double swTime = LoggingStopwatch.Elapsed.TotalSeconds;
                 var data = ReadFloatBlock();
                 if (data[0] != data[1] || data[0] != data[2])
                     throw new Exception("Unexpected block format");
                 DateTime recordTime = DateTime.Now;
                 // data[0,1,2] is -1 if there is a buffer overrun.
-                if(data[0] <0)
+                if (LoggingN == 0)
+                    DLogFudgeOffset = swTime - (data[0] - 1) * DLogPeriod;
+                if (data[0] <0) {
                     System.Diagnostics.Trace.WriteLine("Buffer overrun");
+                    DLogInOverrun = true;
+                    WriteString("ABORT;*WAI");
+                    Query("*OPC?");
+                    WriteString("INIT:NAME DLOG");
+                    WriteString("TRIG:ACQ");
+                }
+                if(DLogInOverrun && data[0] >= 1) {
+                    DLogLostTime += swTime - DLogLastSW - data[0]*DLogPeriod;
+                    DLogInOverrun = false;
+                }
                 for (int i = 3, n=0; i < data.Length; i += 3, n++) {
                     ret = new LoggerDatapoint();
                     ret.Mean = data[i];
                     ret.Min = data[i + 1];
                     ret.Max = data[i + 2];
                     ret.RMS = double.NaN;
-                    ret.t = LoggingN*DLogPeriod;
+                    ret.t = DLogLostTime+LoggingN * DLogPeriod;
                     ret.RecordTime = recordTime;
                     LoggingN++;
                     retList.Add(ret);
                 }
+                double deltaDuration = 0;
                 if(data[0]>0)
                 {
-                    var realDuration = LoggingStopwatch.Elapsed.TotalSeconds;
-                    var deltaDuration = (LoggingN-1)*DLogPeriod - realDuration;
+                    var realDuration = swTime - DLogFudgeOffset;
+                    deltaDuration = DLogLostTime + (LoggingN-1)*DLogPeriod - realDuration;
                     System.Diagnostics.Trace.WriteLine(String.Format("N={0}, dt={1} s, rate={2} ppm", data[0],
                         deltaDuration,
                         deltaDuration / realDuration * 1.0e6
                         ));
-
+                    DLogLastSW = swTime;
                 }
-                return retList.ToArray();
+                var a = retList.ToArray();
+                for(int i=0; i<a.Length; i++)
+                    a[i].Max = deltaDuration;
+                return a;
             }
             switch(mode) {
                 case SenseModeEnum.CURRENT:

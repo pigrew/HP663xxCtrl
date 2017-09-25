@@ -20,10 +20,7 @@ namespace HP663xxCtrl  {
         bool _HasDVM = true;
         public bool HasDVM {
             get { return _HasDVM; }
-            set {
-                System.Diagnostics.Trace.WriteLine("Hasdvm is " + value);
-                Set(ref _HasDVM, value);
-            }
+            set { Set(ref _HasDVM, value); }
         }
         bool _HasOVP = true;
         public bool HasOVP {
