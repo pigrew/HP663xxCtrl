@@ -31,10 +31,6 @@ namespace HP663xxCtrl {
         AcquisitionData AcqDataRecord = null;
 
         public MainWindow() {
-
-            VM = new MainWindowVm(this);
-            this.DataContext = VM;
-
             InitializeComponent();
             ZedGraphControl zgc = (ZedGraphControl)ZedGraphHost.Child;
             float zgcSizeScale = 1.5f;
@@ -52,6 +48,8 @@ namespace HP663xxCtrl {
             zgc.GraphPane.Title.IsVisible = false;
             zgc.GraphPane.XAxis.Title.Text = "Time (s)";
 
+            VM = (MainWindowVm)DataContext;
+            VM.Window = this;
         }
 
         System.Drawing.Color[] CurveColors = new System.Drawing.Color[] {
@@ -498,7 +496,7 @@ namespace HP663xxCtrl {
         }
 
         private void ACDCDetectorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
-            if (VM.InstWorker != null) {
+            if (VM != null && VM.InstWorker != null) {
                 switch ((string)((ComboBoxItem)e.AddedItems[0]).Tag) {
                     case "DC": VM.InstWorker.RequestACDCDetector(CurrentDetectorEnum.DC); break;
                     case "ACDC": VM.InstWorker.RequestACDCDetector(CurrentDetectorEnum.ACDC); break;
