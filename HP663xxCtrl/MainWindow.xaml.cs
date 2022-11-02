@@ -450,6 +450,7 @@ namespace HP663xxCtrl {
                 }
                 details.V2 = VM.V2;
                 details.I2 = VM.I2;
+                details.HasOutput2 = true;
             }
             
 
